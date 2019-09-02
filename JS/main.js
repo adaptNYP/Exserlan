@@ -244,7 +244,7 @@ const sortName = () => {
   if (sortNameBy == "desc") {
     sortNameBy = "asc";
     historicalData.sort((a, b) => {
-      return a.name > b.name ? -1 : b.name << a.name ? 1 : 0;
+      return a.name > b.name ? -1 : b.name < a.name ? 1 : 0;
     });
   } else if (sortNameBy == "asc") {
     sortNameBy = "desc";

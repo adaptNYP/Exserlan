@@ -20,14 +20,13 @@ const groupDataByQnLabel = data => {
       return { QnLabel, data: [] };
     }
   );
-  newData.map(value=> {
-    value.data = data
-      .filter(({ QnLabel }) => value.QnLabel == QnLabel)
+  newData.map(value => {
+    value.data = data.filter(({ QnLabel }) => value.QnLabel == QnLabel);
   });
   newData.sort((a, b) => {
     return a.QnLabel < b.QnLabel ? -1 : b.QnLabel < a.QnLabel ? 1 : 0;
   });
-  return newData
+  return newData;
 };
 console.log(data);
 console.log(groupDataByName(data));
