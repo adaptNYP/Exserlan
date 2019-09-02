@@ -130,8 +130,8 @@ function worker() {
         return { name: Name, progress: [] };
       }
     );
-    namesTemp.forEach((value, index) => {
-      namesTemp[index].progress = currentData
+    namesTemp.map(value => {
+      value.progress = currentData
         .filter(({ Name }) => value.name == Name)
         .map(({ QnLabel, Code, Answer }) => {
           return { qnLabel: QnLabel, code: Code, answer: Answer };
@@ -315,11 +315,12 @@ hideInputs();
 checkForFirstDataStream();
 
 function exportToJsonFile() {
-    let dataStr = JSON.stringify(currentData);
-    let dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    let exportFileDefaultName = 'data.json';
-    let linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+  let dataStr = JSON.stringify(currentData);
+  let dataUri =
+    "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
+  let exportFileDefaultName = "data.json";
+  let linkElement = document.createElement("a");
+  linkElement.setAttribute("href", dataUri);
+  linkElement.setAttribute("download", exportFileDefaultName);
+  linkElement.click();
 }
