@@ -2,13 +2,11 @@
 <html lang="en">
 
 <head>
-
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta name="description" content="">
   <meta name="author" content="">
-
-  <title>METSAN</title>
+  <title>METSAN: Resolutionary Lecturer Portal</title>
   <!-- Jquery -->
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
@@ -21,59 +19,52 @@
 
   <!-- Custom styles for this template -->
   <link href="css/metsan.css" rel="stylesheet">
+
+  <!-- Custom JS -->
+  <script src="JS/main.js" async></script>
 </head>
 
 <body>
-
-  <!-- Navigation -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container">
       <a class="navbar-brand" href="#">METSAN - Tutor view</a>
-	</div>
+    </div>
   </nav>
 
-  <!-- Page Content -->
   <div class="container">
-
-    <!-- Jumbotron Header -->
     <header class="jumbotron my-4">
-	  <div id="landingJumbo">
-		  <h1 class="display-6">Welcome to METSAN</h1>
-		  <p class="lead">This is the tutor view for the <span style="font-weight: bold; color: blue">METSAN (Mobile Enhanced Tutoring for Skills AcquisitioN)</span> app.</p>
-		  <p>Input your surveyJS database id and access keyinto the fields below, click "Start", and you are good to go!</p>
-		  <div>
-			<input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc" placeholder="dbID">
-			<input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc" placeholder="accessKey">
-			<a href="#" class="btn btn-primary btn-sm" onclick="hideInputs(); checkForFirstDataStream()">Start</a>
-		  </div>
-	  </div>
-	  <div id="appRunningJumbo" style="display: none">
-		<p class="lead" style="font-weight: bold; color: red">METSAN Running</p>
-		<p id="runningMsg">Click on "Stop" to terminate the app.</p>
-		<a href="#" class="btn btn-warning btn-sm" onclick="clearTimer()">Stop</a>
-		<a href="#" class="btn btn-default btn-sm" id="toggleMode" >Waiting...</a>
-		<br><br>
-		<a href="#" class="btn btn-success btn-sm" id="manualRefreshBtn" style="display:none" onclick="worker()">Refresh data</a>
-	  </div>
+      <div id="landingJumbo">
+        <h1 class="display-6">Welcome to METSAN</h1>
+        <p class="lead">This is the tutor view for the <span style="font-weight: bold; color: blue">METSAN (Mobile
+            Enhanced Tutoring for Skills AcquisitioN)</span> app.</p>
+        <p>Input your surveyJS database id and access keyinto the fields below, click "Start", and you are good to go!
+        </p>
+        <div>
+          <input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc" placeholder="dbID">
+          <input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc"
+            placeholder="accessKey">
+          <a href="#" class="btn btn-primary btn-sm" onclick="hideInputs(); checkForFirstDataStream()">Start</a>
+        </div>
+      </div>
+      <div id="appRunningJumbo" style="display: none">
+        <p class="lead" style="font-weight: bold; color: red">METSAN Running</p>
+        <p id="runningMsg">Click on "Stop" to terminate the app.</p>
+        <a href="#" class="btn btn-warning btn-sm" onclick="clearTimer()">Stop</a>
+        <a href="#" class="btn btn-default btn-sm" id="toggleMode">Waiting...</a>
+        <br><br>
+        <a href="#" class="btn btn-success btn-sm" id="manualRefreshBtn" onclick="worker()">Refresh
+          data</a>
+        <a href="#" class="btn btn-success btn-sm dataButtons" onclick="sortName()">Sort by Name</a>
+        <button class="btn btn-success btn-sm dataButtons" onclick="exportToJsonFile()">Download JSON</button>
+      </div>
     </header>
-
-   <!-- Page Features -->
-
-
-   <div id="studentsProgress">
-
-     <p>Awaiting input...</p>
-   </div>
-
-    <!-- /.row -->
-
+    <div id="studentsProgress">
+      <p>Awaiting input...</p>
+    </div>
   </div>
-  <!-- /.container -->
 
   <!-- The Modal -->
   <div id="myModal" class="modal">
-
-    <!-- Modal content -->
     <div class="modal-content">
       <div class="modal-header">
         <span class="close">&times;</span>
@@ -83,18 +74,15 @@
         <p>Some text in the Modal Body</p>
       </div>
     </div>
-
   </div>
-
 
   <!-- Footer -->
   <footer class="py-5 bg-dark">
     <div class="container">
       <p class="m-0 text-center text-white">Copyright &copy; Nanyang Polytechnic 2019</p>
     </div>
-    <!-- /.container -->
   </footer>
-
+  <!-- studentTemplate Template-->
   <template id="studentTemplate">
     <div class="row text-center student">
       <div class="col-3">
@@ -104,314 +92,18 @@
           </div>
         </div>
       </div>
-
       <div class="col-9">
         <div class="card h-100">
           <div class="card-body cellBody">
           </div>
         </div>
       </div>
-	</div>
+    </div>
   </template>
-
+  <!-- cellTemplates Template-->
   <template id="cellTemplate">
-	<div class="progressCell"></div>
+    <div class="progressCell"></div>
   </template>
-
-
-  <script>
-  var currentData = [];
-  var historicalData = [];
-  var globalCounter = 0;
-  var allNames = [];
-  var timer;
-  var timerPeriod = 5000;
-  var autoRefresh = true;
-  var clicks = 0;
-  var clickTimer = null;
-  var DELAY = 300;
-  var firstDataReceived = false;
-  var firstDataInterval = null;
-  
-  var initialRunningMsg = "Click on 'Stop' to terminate the app.";
-  var toggleRunningMsg = "Data is in! You can toggle between manual or auto refresh."
-
-  // Get the <span> element that closes the modal
-  var span = document.getElementsByClassName("close")[0];
-
-  // Get the modal
-  var modal = document.getElementById("myModal");
-
-  // When the user clicks on <span> (x), close the modal
-  span.onclick = function() {
-    modal.style.display = "none";
-  }
-
-  // When the user clicks anywhere outside of the modal, close it
-  window.onclick = function(event) {
-    if (event.target == modal) {
-      modal.style.display = "none";
-    }
-  }
-
-  function dynamicFeedback() {
-	clicks++; // count clicks
-	
-	var thisCell = this;
-	
-	if(clicks == 1) {
-		clickTimer = setTimeout(function() {
-			modal.querySelector(".modal-header h2").innerHTML = thisCell.getAttribute('data-name') +
-                                                                " - " + thisCell.getAttribute('data-qn-label');
-			modal.querySelector(".modal-body").innerHTML = thisCell.getAttribute('data-answer');
-			modal.style.display = "block";
-			clicks = 0;
-		}, DELAY);
-	}
-	else {
-		clearTimeout(clickTimer); // prevent single-click action
-		clicks = 0;
-	}
-  }
-  
-  function resolveAlert(e) {
-	e.preventDefault();
-	if(!autoRefresh) {		
-		if($(this).hasClass('codeOrange') || $(this).hasClass('codeRed')) {
-			// add class to change border style of cell
-			$(this).addClass('resolved');
-			
-			var indexHist = this.getAttribute('data-index-hist');
-			var indexProg = this.getAttribute('data-index-prog');
-			
-			var thisStudentProgress = historicalData[indexHist].progress;
-			thisStudentProgress[indexProg].resolved = 1;
-		}
-	}
-  }  
-
-  function checkForFirstDataStream() {
-	$('#studentsProgress').html("<p>Awaiting input...</p>");
-	firstDataInterval = setInterval(worker, timerPeriod);
-  }
-  
-  function worker() {
-    // Retrieve data from database
-    var currentRes = function () {
-      var tmp = null;
-      var dbRootURL = 'https://dxsurvey.com/api/MySurveys/getSurveyResults/';
-      var dbID = $('#surveyJSDBid').val();
-      var dbaccessKey = $('#surveyJSDBaccessKey').val();
-
-      // remove after testing
-       dbID = '89c190aa-9d8b-4d34-af41-61f602d54a9b'
-       dbaccessKey = '4d09c11a98484a91b9182b2f6bff76c9'
-
-      $.ajax({
-        async: false,
-        type: 'GET',
-        url: dbRootURL + dbID + "?accessKey=" + dbaccessKey,
-        dataType: 'json',
-        success: function (data) {
-          tmp = data;
-		  if(tmp.Data.length!=0 && !firstDataReceived) {
-			firstDataReceived = true;
-			clearInterval(firstDataInterval);
-			$('#toggleMode').on('click', toggleRefreshMode)
-		                    .removeClass("btn-default")
-				            .addClass("btn-info")
-						    .html("Manual now");
-			$('#runningMsg').text(initialRunningMsg + " " + toggleRunningMsg);
-			autoRefresh = false;
-			$("#manualRefreshBtn").show();			
-		  }
-        },
-        complete: function() {
-          // Schedule the next request when the current one's complete
-		  if(autoRefresh) {
-			timer = setTimeout(worker, timerPeriod);
-		  }
-        }
-      });
-      return tmp;
-    }();
-    // sorting
-    currentRes.Data.sort(function(a,b){
-      // Turn your strings into dates, and then subtract them
-      // to get a value that is either negative, positive, or zero.
-
-      return new Date(a.HappendAt) - new Date(b.HappendAt);
-    });
-
-    currentData = currentRes.Data.slice(globalCounter);
-
-		var newCounter = currentRes.Data.length;
-
-    if (globalCounter < newCounter) {
-      globalCounter = newCounter;
-      for(var i=0; i<currentData.length; i++) {
-        var thisStudent = {
-          "name": "",
-          "progress": []
-        };
-        var newProgress = {
-          "qnLabel": currentData[i].QnLabel,
-          "code": currentData[i].Code,
-          "answer": currentData[i].Answer
-        };
-
-        // new student
-        if(allNames.indexOf(currentData[i].Name) < 0) {
-            allNames.push(currentData[i].Name);
-            thisStudent.name = currentData[i].Name;
-        }
-        //this is an existing student
-        else {
-            for(var j=0; j<historicalData.length; j++) {
-              if(historicalData[j].name == currentData[i].Name) {
-                thisStudent = historicalData.splice(j,1)[0];
-                break;
-              }
-            }
-        }
-        thisStudent.progress.push(newProgress);
-
-        historicalData.unshift(thisStudent);
-      }
-      refreshView();
-    }
-  }
-
-  var refreshView = function() {
-    document.getElementById('studentsProgress').innerHTML = "";
-
-    if ('content' in document.createElement('template')) {
-
-      for(var k=0; k<historicalData.length; k++) {
-        // Instantiate the div with the existing HTML tbody
-        // and the row with the template
-        var studentTemplate = document.querySelector('#studentTemplate');
-
-        // Clone the new row and insert it into the table
-        var studentRow = document.importNode(studentTemplate.content, true);
-        studentRow.querySelector(".studentName").innerHTML = historicalData[k].name;
-        var thisStudentProgress = historicalData[k].progress;
-
-        for(var t=0; t < thisStudentProgress.length; t++) {
-          var cellTemplate = document.querySelector('#cellTemplate');
-		  var cloneCell = document.importNode(cellTemplate.content, true);
-
-          //assign student name to cell
-          cloneCell.querySelector(".progressCell").dataset.name = historicalData[k].name;
-
-          // prepare cell with data from qnLabel
-		  cloneCell.querySelector(".progressCell").innerHTML = thisStudentProgress[t].qnLabel;
-          cloneCell.querySelector(".progressCell").dataset.qnLabel = thisStudentProgress[t].qnLabel;
-
-		  // prepare cell with indices from historicalData and thisStudentProgress
-		  cloneCell.querySelector(".progressCell").dataset.indexHist = k;
-		  cloneCell.querySelector(".progressCell").dataset.indexProg = t;
-		  
-		  // Prepare class according to first character of QnLabel in data
-		  // Possible values = uppercase alphabet
-		  var currentCellClass;
-		  if(thisStudentProgress[t].qnLabel.charAt(0) == 'A')
-			  currentCellClass = 'classA';
-		  else if(thisStudentProgress[t].qnLabel.charAt(0) == 'B')
-			  currentCellClass = 'classB';
-		  else if(thisStudentProgress[t].qnLabel.charAt(0) == 'C')
-			  currentCellClass = 'classC';
-		  else if(thisStudentProgress[t].qnLabel.charAt(0) == 'D')
-			  currentCellClass = 'classD';
-
-          // prepare cell with classes
-          cloneCell.querySelector(".progressCell").classList.add(currentCellClass);
-
-     	  // Prepare class according to code in data
-     	  // Possible values: codeRed, codeGreen, codeOrange
-          if(!(typeof thisStudentProgress[t].code === "undefined")) {
-              cloneCell.querySelector(".progressCell").classList.add(thisStudentProgress[t].code);
-              //prepare cells with dataset
-              cloneCell.querySelector(".progressCell").dataset.code = thisStudentProgress[t].code;
-          }
-
-     	  // Prepare class according to feedback in data
-          if(!(typeof thisStudentProgress[t].answer === "undefined")) {
-            //prepare cells with classes
-            cloneCell.querySelector(".progressCell").classList.add("feedbackCell");
-            //prepare cells with dataset
-            cloneCell.querySelector(".progressCell").dataset.answer = thisStudentProgress[t].answer;
-          }
-
-     	  // Prepare class according to resolved status in data
-          if(!(typeof thisStudentProgress[t].resolved === "undefined")) {
-            //prepare cells with classes
-            cloneCell.querySelector(".progressCell").classList.add("resolved");
-          }		  
-		  
-    	  studentRow.querySelector(".cellBody").appendChild(cloneCell);
-          $(studentRow).find('.feedbackCell:last-child').click(dynamicFeedback);
-		  $(studentRow).find('.progressCell:last-child').dblclick(resolveAlert);
-        }
-        document.getElementById('studentsProgress').appendChild(studentRow);
-      }
-    }
-     else {
-      console.log("Template doesn't work");
-      // Find another way to add the rows to the table because
-      // the HTML template element is not supported.
-    }
-  }
-
-  function hideInputs() {
-  	$("#landingJumbo").hide();
-  	$("#appRunningJumbo").show();
-	$('#toggleMode').off('click', toggleRefreshMode)
-					.removeClass("btn-info btn-danger")
-					.addClass("btn-default")
-					.html("Waiting...");
-	autoRefresh = false;
-	$("#manualRefreshBtn").hide();	
-  }
-
-  function clearTimer() {
-    clearTimeout(timer);
-	$("#landingJumbo").show();
-    $("#appRunningJumbo").hide();
-	$('#toggleMode').off('click', toggleRefreshMode)
-					.removeClass("btn-info btn-danger")
-					.addClass("btn-default")
-					.html("Waiting...");	
-	autoRefresh = false;
-	$("#manualRefreshBtn").hide();
-  	currentData = [];
-  	historicalData = [];
-  	globalCounter = 0;
-  	allNames = [];
-	clicks = 0;
-	firstDataReceived = false;
-	$('#runningMsg').text(initialRunningMsg);
-  }
-
-  function toggleRefreshMode() {
-	if($("#toggleMode").hasClass("btn-danger")) {
-		$("#toggleMode").removeClass("btn-danger")
-				        .addClass("btn-info")
-						.html("Manual now");
-		autoRefresh = false;
-		$("#manualRefreshBtn").show();
-	}
-	else {
-		$("#toggleMode").removeClass("btn-info")
-				        .addClass("btn-danger")
-						.html("Auto now");
-		autoRefresh = true;
-		worker();
-		$("#manualRefreshBtn").hide();
-	}
-  }
-  
-  </script>
 </body>
 
 </html>

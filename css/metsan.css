@@ -2,79 +2,79 @@ body {
   padding-top: 56px;
 }
 #retrieveFromDBbtn {
-	margin-left:10px;
+  margin-left: 10px;
 }
 
 footer {
-	margin-top: 20px;
+  margin-top: 20px;
 }
 
 .studentName {
-	word-wrap:break-word;
-	position: absolute;
+  word-wrap: break-word;
+  position: absolute;
 }
 
 .card-body {
-	text-align: left;
-	font-weight: bold;
-	position: relative;
+  text-align: left;
+  font-weight: bold;
+  position: relative;
 }
 
 .row {
-	margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 
 .progressCell {
-	display: inline-block;
-	height: 40px;
-	width: 40px;
-	border: 3px solid black;
-	text-align: center;
-	vertical-align: middle;
-	line-height: 40px;
-	font-size: 1.3em;
-	font-family: Arial;
-	font-weight: normal;
-	margin: 5px;
+  display: inline-block;
+  height: 40px;
+  width: 40px;
+  border: 3px solid black;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 40px;
+  font-size: 1.3em;
+  font-family: Arial;
+  font-weight: normal;
+  margin: 5px;
 
   -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-     -khtml-user-select: none; /* Konqueror HTML */
-       -moz-user-select: none; /* Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
-                                  supported by Chrome and Opera */	
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
 }
 
 .classA {
-	background-color: #ffccff;
+  background-color: #ffccff;
 }
 .classB {
-	background-color: lightyellow;
+  background-color: lightyellow;
 }
 .classC {
-	background-color: lightblue;
+  background-color: lightblue;
 }
 .classD {
-	background-color: #ccff99;
+  background-color: #ccff99;
 }
 
 .codeRed {
-	border-color: red;
+  border-color: red;
 }
 .codeGreen {
-	border-color: green;
+  border-color: green;
 }
 .codeOrange {
-	border-color: orange;
+  border-color: orange;
 }
 
 .feedbackCell {
-    border-radius: 50%;
+  border-radius: 50%;
 }
 
 .resolved {
-	border-style: dotted;
+  border-style: dotted;
 }
 
 /* The Modal (background) */
@@ -88,8 +88,8 @@ footer {
   width: 100%; /* Full width */
   height: 100%; /* Full height */
   overflow: auto; /* Enable scroll if needed */
-  background-color: rgb(0,0,0); /* Fallback color */
-  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+  background-color: rgb(0, 0, 0); /* Fallback color */
+  background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
 }
 
 /* Modal Content */
@@ -100,22 +100,34 @@ footer {
   padding: 0;
   border: 1px solid #888;
   width: 80%;
-  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   -webkit-animation-name: animatetop;
   -webkit-animation-duration: 0.4s;
   animation-name: animatetop;
-  animation-duration: 0.4s
+  animation-duration: 0.4s;
 }
 
 /* Add Animation */
 @-webkit-keyframes animatetop {
-  from {top:-300px; opacity:0}
-  to {top:0; opacity:1}
+  from {
+    top: -300px;
+    opacity: 0;
+  }
+  to {
+    top: 0;
+    opacity: 1;
+  }
 }
 
 @keyframes animatetop {
-  from {top:-300px; opacity:0}
-  to {top:0; opacity:1}
+  from {
+    top: -300px;
+    opacity: 0;
+  }
+  to {
+    top: 0;
+    opacity: 1;
+  }
 }
 
 /* The Close Button */
@@ -139,4 +151,10 @@ footer {
   color: white;
 }
 
-.modal-body {padding: 2px 16px;}
+.modal-body {
+  padding: 2px 16px;
+}
+
+.dataButtons {
+  display: none;
+}
