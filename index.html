@@ -32,7 +32,7 @@
   </nav>
 
   <div class="container">
-    <header class="jumbotron my-4">
+    <div class="jumbotron my-4">
       <div id="landingJumbo">
         <h1 class="display-6">Welcome to METSAN</h1>
         <p class="lead">This is the tutor view for the <span style="font-weight: bold; color: blue">METSAN (Mobile
@@ -57,12 +57,17 @@
         <a href="#" class="btn btn-success btn-sm dataButtons" onclick="sortName()">Sort by Name</a>
         <button class="btn btn-success btn-sm dataButtons" onclick="exportToJsonFile()">Download JSON</button>
       </div>
-    </header>
+      <hr class="my dataButtons">
+      <div class="dataButtons">
+        <input type="range" class="slider" id="myRange">
+        <p>Time: <span id="demo"></span></p>
+      </div>
+    </div>
+
     <div id="studentsProgress">
       <p>Awaiting input...</p>
     </div>
   </div>
-
   <!-- The Modal -->
   <div id="myModal" class="modal">
     <div class="modal-content">

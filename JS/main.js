@@ -126,103 +126,101 @@ function worker() {
     globalCounter = newCounter;
     // Group According to Names
     const namesTemp = [...new Set(currentData.map(({ Name }) => Name))].map(
-      Name => {
-        return { name: Name, progress: [] };
+      GroupName => {
+        return {
+          name: GroupName,
+          progress: currentData
+            .filter(({ Name }) => GroupName == Name)
+            .map(({ QnLabel, Code, Answer }) => {
+              return { qnLabel: QnLabel, code: Code, answer: Answer };
+            })
+        };
       }
     );
-    namesTemp.map(value => {
-      value.progress = currentData
-        .filter(({ Name }) => value.name == Name)
-        .map(({ QnLabel, Code, Answer }) => {
-          return { qnLabel: QnLabel, code: Code, answer: Answer };
-        });
-    });
-    namesTemp.sort((a, b) => {
-      return a.name < b.name ? -1 : b.name < a.name ? 1 : 0;
-    });
+    arraySortString(namesTemp, "name");
     historicalData = namesTemp;
     refreshView();
   }
+}
+
+function arraySortString(array, name, ascdesc = "desc") {
+  return array.sort((a, b) => {
+    return ascdesc == "desc"
+      ? a[name] < b[name]
+        ? -1
+        : b[name] < a[name]
+        ? 1
+        : 0
+      : ascdesc == "asc"
+      ? a[name] > b[name]
+        ? -1
+        : b[name] > a[name]
+        ? 1
+        : 0
+      : new Error("Unable to sort");
+  });
 }
 
 var refreshView = () => {
   document.getElementById("studentsProgress").innerHTML = "";
 
   if ("content" in document.createElement("template")) {
-    for (var k = 0; k < historicalData.length; k++) {
+    historicalData.forEach(({ name, progress }, indexHist) => {
       // Instantiate the div with the existing HTML tbody
       // and the row with the template
       var studentTemplate = document.querySelector("#studentTemplate");
 
       // Clone the new row and insert it into the table
       var studentRow = document.importNode(studentTemplate.content, true);
-      studentRow.querySelector(".studentName").innerHTML =
-        historicalData[k].name;
-      var thisStudentProgress = historicalData[k].progress;
+      studentRow.querySelector(".studentName").innerHTML = name;
 
-      for (var t = 0; t < thisStudentProgress.length; t++) {
+      progress.forEach(({ qnLabel, answer, code, resolved }, indexProg) => {
         var cellTemplate = document.querySelector("#cellTemplate");
         var cloneCell = document.importNode(cellTemplate.content, true);
 
         //assign student name to cell
-        cloneCell.querySelector(".progressCell").dataset.name =
-          historicalData[k].name;
-
+        cloneCell.querySelector(".progressCell").dataset.name = name;
         // prepare cell with data from qnLabel
-        cloneCell.querySelector(".progressCell").innerHTML =
-          thisStudentProgress[t].qnLabel;
-        cloneCell.querySelector(".progressCell").dataset.qnLabel =
-          thisStudentProgress[t].qnLabel;
+        cloneCell.querySelector(".progressCell").innerHTML = qnLabel;
+        cloneCell.querySelector(".progressCell").dataset.qnLabel = qnLabel;
 
         // prepare cell with indices from historicalData and thisStudentProgress
-        cloneCell.querySelector(".progressCell").dataset.indexHist = k;
-        cloneCell.querySelector(".progressCell").dataset.indexProg = t;
-
-        // Prepare class according to first character of QnLabel in data
-        // Possible values = uppercase alphabet
-        var currentCellClass;
-        if (thisStudentProgress[t].qnLabel.charAt(0) == "A")
-          currentCellClass = "classA";
-        else if (thisStudentProgress[t].qnLabel.charAt(0) == "B")
-          currentCellClass = "classB";
-        else if (thisStudentProgress[t].qnLabel.charAt(0) == "C")
-          currentCellClass = "classC";
-        else if (thisStudentProgress[t].qnLabel.charAt(0) == "D")
-          currentCellClass = "classD";
+        cloneCell.querySelector(".progressCell").dataset.indexHist = indexHist;
+        cloneCell.querySelector(".progressCell").dataset.indexProg = indexProg;
 
         // prepare cell with classes
-        cloneCell
-          .querySelector(".progressCell")
-          .classList.add(currentCellClass);
+        cloneCell.querySelector(".progressCell").classList.add(
+          (() =>
+            // Prepare class according to first character of QnLabel in data
+            // Possible values = uppercase alphabet
+            ["A", "B", "C", "D"]
+              .filter(value => value == qnLabel.charAt(0))
+              .map(value => `class${value}`)[0])()
+        );
 
         // Prepare class according to code in data
         // Possible values: codeRed, codeGreen, codeOrange
-        if (!(typeof thisStudentProgress[t].code === "undefined")) {
-          cloneCell
-            .querySelector(".progressCell")
-            .classList.add(thisStudentProgress[t].code);
+        if (!(typeof code === "undefined")) {
+          cloneCell.querySelector(".progressCell").classList.add(code);
           //prepare cells with dataset
-          cloneCell.querySelector(".progressCell").dataset.code =
-            thisStudentProgress[t].code;
+          cloneCell.querySelector(".progressCell").dataset.code = code;
         }
 
         // Prepare class according to feedback in data
-        if (!(typeof thisStudentProgress[t].answer === "undefined")) {
+        if (!(typeof answer === "undefined")) {
           //prepare cells with classes
           cloneCell
             .querySelector(".progressCell")
             .classList.add("feedbackCell");
           //prepare cells with dataset
-          cloneCell.querySelector(".progressCell").dataset.answer =
-            thisStudentProgress[t].answer;
+          cloneCell.querySelector(".progressCell").dataset.answer = answer;
         }
 
         // Prepare class according to resolved status in data
-        if (!(typeof thisStudentProgress[t].resolved === "undefined")) {
+        if (!(typeof resolved === "undefined")) {
           //prepare cells with classes
           cloneCell.querySelector(".progressCell").classList.add("resolved");
         }
-
         studentRow.querySelector(".cellBody").appendChild(cloneCell);
         $(studentRow)
           .find(".feedbackCell:last-child")
@@ -230,9 +228,9 @@ var refreshView = () => {
         $(studentRow)
           .find(".progressCell:last-child")
           .dblclick(resolveAlert);
-      }
+      });
       document.getElementById("studentsProgress").appendChild(studentRow);
-    }
+    });
   } else {
     console.log("Template doesn't work");
     // Find another way to add the rows to the table because
@@ -240,20 +238,16 @@ var refreshView = () => {
   }
 };
 
-const sortName = () => {
+function sortName() {
   if (sortNameBy == "desc") {
+    arraySortString(historicalData, "name", "asc");
     sortNameBy = "asc";
-    historicalData.sort((a, b) => {
-      return a.name > b.name ? -1 : b.name < a.name ? 1 : 0;
-    });
   } else if (sortNameBy == "asc") {
+    arraySortString(historicalData, "name");
     sortNameBy = "desc";
-    historicalData.sort((a, b) => {
-      return a.name < b.name ? -1 : b.name < a.name ? 1 : 0;
-    });
   }
   refreshView();
-};
+}
 
 hideInputs = () => {
   $("#landingJumbo").hide();
@@ -309,6 +303,18 @@ function toggleRefreshMode() {
     $(".dataButtons").hide();
   }
 }
+
+var slider = document.getElementById("myRange");
+var output = document.getElementById("demo");
+const today = new Date();
+const time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+slider.setAttribute("min",100)
+slider.setAttribute("max",1000)
+output.innerHTML = slider.value = time;
+
+slider.oninput = function() {
+  output.innerHTML = this.value;
+};
 
 //Testing
 hideInputs();
