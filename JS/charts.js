@@ -1,3 +1,31 @@
+
+
+
+
+
+
+
+
+let startingtime = data[50].HappendAt;
+data
+  .map(({ HappendAt }) => HappendAt)
+  .forEach(HappendAt => {
+    if (HappendAt < startingtime) {
+      startingtime = HappendAt;
+    }
+  });
+console.log(startingtime);
+
+
+
+
+
+
+
+
+
+
+
 const groupDataByName = data => {
   const namesTemp = [...new Set(data.map(({ Name }) => Name))].map(Name => {
     return { name: Name, progress: [] };
@@ -84,7 +112,25 @@ const testArray = [
   { Name: "benny", QnLabel: "A1", Answer: "answer", HappendAt: "2" }
 ];
 
+function arraySortString(array, name, ascdesc = "desc") {
+  return array.sort((a, b) => {
+    return ascdesc == "desc"
+      ? a[name] < b[name]
+        ? -1
+        : b[name] < a[name]
+        ? 1
+        : 0
+      : ascdesc == "asc"
+      ? a[name] > b[name]
+        ? -1
+        : b[name] > a[name]
+        ? 1
+        : 0
+      : new Error("Unable to sort");
+  });
+}
 
+console.log(arraySortString(data, "Name"));
 
 testArray.sort((a, b) => new Date(b.HappendAt) - new Date(a.HappendAt));
 const newArray = [...new Set(testArray.map(({ Name }) => Name))].map(
@@ -156,3 +202,4 @@ console.log(secondsToDate(dateToSeconds(today))); // Test
 slider.oninput = function() {
   document.getElementById("sliderOutput").innerHTML = formatTime(this.value);
 };
+

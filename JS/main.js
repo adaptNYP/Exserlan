@@ -2,6 +2,7 @@ var currentData = [];
 var historicalData = [];
 var globalCounter = 0;
 var allNames = [];
+let containment = [];
 var timer;
 const TIMER_PERIOD = 5000;
 var autoRefresh = true;
@@ -11,6 +12,7 @@ var DOUBLECLICK_DELAY = 300; //300 Milliseconds, 0.3 seconds
 var firstDataReceived = false;
 var firstDataInterval = null;
 let sortNameBy = "desc";
+let today = new Date("2019-08-21T08:52:24.0545633"); //To be changed without inputs
 
 const INITIAL_RUNNING_MSG = "Click on 'Stop' to terminate the app.";
 const TOGGLE_RUNNING_MSG =
@@ -114,31 +116,88 @@ function worker() {
     });
     return tmp;
   })();
-  // Sorting (Useless)
-  currentRes.Data.sort((a, b) => new Date(a.HappendAt) - new Date(b.HappendAt)); //Accending Date
-  //   currentRes.Data.sort((a, b) => (a.Name > b.Name ? -1 : b.Name > a.Name ? 1 : 0)); //Decending Name
+  // currentRes.Data.sort((a, b) => new Date(a.HappendAt) - new Date(b.HappendAt)); //Accending Date
 
-  currentData = currentRes.Data.slice(globalCounter); //Is it even neccessary to put the slice
+  currentData = [...new Set(currentRes.Data.slice(globalCounter))]; //Is it even neccessary to put the slice
 
   var newCounter = currentRes.Data.length;
 
   if (globalCounter < newCounter) {
     globalCounter = newCounter;
+
+    //Remove Date only leave time //Remove after testing
+    currentData.map(value => {
+      const date = new Date(value.HappendAt);
+      value.HappendAt = new Date(
+        2019,
+        7,
+        21,
+        date.getHours(),
+        date.getMinutes(),
+        date.getSeconds()
+      );
+    });
+
+    let startingTime = currentData[0].HappendAt;
+    currentData
+      .map(({ HappendAt }) => HappendAt)
+      .forEach(HappendAt => {
+        if (HappendAt < startingTime) {
+          startingTime = HappendAt;
+        }
+      });
+    slider.setAttribute("min", dateToSeconds(startingTime));
+
+    //To be replaced
+    let endTime = currentData[0].HappendAt;
+    currentData
+      .map(({ HappendAt }) => HappendAt)
+      .forEach(HappendAt => {
+        if (HappendAt > endTime) {
+          startingTime = HappendAt;
+        }
+      });
+    slider.setAttribute("max", dateToSeconds(endTime));
+    slider.setAttribute("value", dateToSeconds(endTime));
+    document.getElementById("now").innerHTML =
+      endTime.getHours() +
+      ":" +
+      endTime.getMinutes() +
+      ":" +
+      endTime.getSeconds();
+
+    document.getElementById("sliderOutput").innerHTML = formatTimeToHTML(
+      startingTime
+    );
+
+    //Sort Desc
+    currentData.sort((a, b) => new Date(b.HappendAt) - new Date(a.HappendAt));
+
     // Group According to Names
     const namesTemp = [...new Set(currentData.map(({ Name }) => Name))].map(
       GroupName => {
         return {
           name: GroupName,
-          progress: currentData
-            .filter(({ Name }) => GroupName == Name)
-            .map(({ QnLabel, Code, Answer }) => {
-              return { qnLabel: QnLabel, code: Code, answer: Answer };
-            })
+          progress: []
         };
       }
     );
+    namesTemp.map(value => {
+      let holder = currentData
+        .filter(({ Name }) => value.name == Name)
+        .map(({ QnLabel, Code, Answer, HappendAt }) => {
+          return { qnLabel: QnLabel, code: Code, answer: Answer, HappendAt };
+        });
+      holder = [...new Set(holder.map(({ qnLabel }) => qnLabel))].map(qnLabel =>
+        holder.find(s => qnLabel == s.qnLabel)
+      );
+      value.progress = holder;
+    });
     arraySortString(namesTemp, "name");
+    console.log(namesTemp);
     historicalData = namesTemp;
+    containment = namesTemp.concat(); //global
+    console.log(currentData)
     refreshView();
   }
 }
@@ -276,6 +335,7 @@ function clearTimer() {
   $(".dataButtons").hide();
   currentData = [];
   historicalData = [];
+  containment = [];
   globalCounter = 0;
   allNames = [];
   clicks = 0;
@@ -305,15 +365,50 @@ function toggleRefreshMode() {
 }
 
 var slider = document.getElementById("myRange");
-var output = document.getElementById("demo");
-const today = new Date();
-const time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-slider.setAttribute("min",100)
-slider.setAttribute("max",1000)
-output.innerHTML = slider.value = time;
+
+function dateToSeconds(date = new Date()) {
+  return getSeconds(date.getSeconds(), date.getMinutes(), date.getHours());
+}
+function getSeconds(seconds = 0, minutes = 0, hours = 0) {
+  return hours * 60 * 60 + minutes * 60 + seconds;
+}
+function formatTime(s) {
+  seconds = s % 60;
+  hours = Math.trunc(s / 60 / 60);
+  minutes = (s - hours * 60 * 60 - seconds) / 60;
+  return `${hours}:${minutes}:${seconds}`;
+}
+function formatTimeToHTML(date = new Date()) {
+  return date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+}
+function secondsToDate(s) {
+  seconds = s % 60;
+  hours = Math.trunc(s / 60 / 60);
+  minutes = (s - hours * 60 * 60 - seconds) / 60;
+  return new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+    hours,
+    minutes,
+    seconds
+  );
+}
 
 slider.oninput = function() {
-  output.innerHTML = this.value;
+  document.getElementById("sliderOutput").innerHTML = formatTime(this.value);
+  if (currentData) {
+    historicalData = [];
+    const to = secondsToDate(this.value);
+    containment.forEach(value => {
+      let progress = [];
+      value.progress.forEach(value => {
+        if (value.HappendAt < to) progress.push(value);
+      });
+      historicalData.push({ name: value.name, progress });
+    });
+    refreshView();
+  }
 };
 
 //Testing
