@@ -13,6 +13,10 @@ var firstDataReceived = false;
 var firstDataInterval = null;
 let sortNameBy = "desc";
 let today = new Date("2019-08-21T08:52:24.0545633"); //To be changed without inputs
+let startingTime = new Date(),
+  endTime = new Date();
+
+let slider = document.getElementById("myRange");
 
 const INITIAL_RUNNING_MSG = "Click on 'Stop' to terminate the app.";
 const TOGGLE_RUNNING_MSG =
@@ -138,7 +142,7 @@ function worker() {
       );
     });
 
-    let startingTime = currentData[0].HappendAt;
+    startingTime = currentData[0].HappendAt;
     currentData
       .map(({ HappendAt }) => HappendAt)
       .forEach(HappendAt => {
@@ -149,16 +153,18 @@ function worker() {
     slider.setAttribute("min", dateToSeconds(startingTime));
 
     //To be replaced
-    let endTime = currentData[0].HappendAt;
+    endTime = currentData[0].HappendAt;
     currentData
       .map(({ HappendAt }) => HappendAt)
       .forEach(HappendAt => {
         if (HappendAt > endTime) {
-          startingTime = HappendAt;
+          endTime = HappendAt;
         }
       });
     slider.setAttribute("max", dateToSeconds(endTime));
+    console.log(dateToSeconds(endTime));
     slider.setAttribute("value", dateToSeconds(endTime));
+    console.log(slider);
     document.getElementById("now").innerHTML =
       endTime.getHours() +
       ":" +
@@ -167,39 +173,40 @@ function worker() {
       endTime.getSeconds();
 
     document.getElementById("sliderOutput").innerHTML = formatTimeToHTML(
-      startingTime
+      endTime
     );
 
     //Sort Desc
     currentData.sort((a, b) => new Date(b.HappendAt) - new Date(a.HappendAt));
 
     // Group According to Names
-    const namesTemp = [...new Set(currentData.map(({ Name }) => Name))].map(
-      GroupName => {
-        return {
-          name: GroupName,
-          progress: []
-        };
-      }
-    );
-    namesTemp.map(value => {
-      let holder = currentData
-        .filter(({ Name }) => value.name == Name)
-        .map(({ QnLabel, Code, Answer, HappendAt }) => {
-          return { qnLabel: QnLabel, code: Code, answer: Answer, HappendAt };
-        });
-      holder = [...new Set(holder.map(({ qnLabel }) => qnLabel))].map(qnLabel =>
-        holder.find(s => qnLabel == s.qnLabel)
-      );
-      value.progress = holder;
-    });
-    arraySortString(namesTemp, "name");
-    console.log(namesTemp);
-    historicalData = namesTemp;
-    containment = namesTemp.concat(); //global
-    console.log(currentData)
+    historicalData = dataArrayToNames(currentData, endTime);
+    containment = historicalData.concat(); //global
     refreshView();
   }
+}
+
+function dataArrayToNames(array, time = endTime) {
+  const namesTemp = [...new Set(array.map(({ Name }) => Name))].map(
+    GroupName => {
+      return {
+        name: GroupName,
+        progress: []
+      };
+    }
+  );
+  namesTemp.map(value => {
+    value.progress = array
+      .filter(({ Name, HappendAt }) => value.name == Name && HappendAt <= time)
+      .map(({ QnLabel, Code, Answer, HappendAt }) => {
+        return { qnLabel: QnLabel, code: Code, answer: Answer, HappendAt };
+      });
+    value.progress = [
+      ...new Set(value.progress.map(({ qnLabel }) => qnLabel))
+    ].map(qnLabel => value.progress.find(s => qnLabel == s.qnLabel));
+  });
+  arraySortString(namesTemp, "name");
+  return namesTemp;
 }
 
 function arraySortString(array, name, ascdesc = "desc") {
@@ -364,8 +371,6 @@ function toggleRefreshMode() {
   }
 }
 
-var slider = document.getElementById("myRange");
-
 function dateToSeconds(date = new Date()) {
   return getSeconds(date.getSeconds(), date.getMinutes(), date.getHours());
 }
@@ -398,18 +403,14 @@ function secondsToDate(s) {
 slider.oninput = function() {
   document.getElementById("sliderOutput").innerHTML = formatTime(this.value);
   if (currentData) {
-    historicalData = [];
     const to = secondsToDate(this.value);
-    containment.forEach(value => {
-      let progress = [];
-      value.progress.forEach(value => {
-        if (value.HappendAt < to) progress.push(value);
-      });
-      historicalData.push({ name: value.name, progress });
-    });
+    historicalData = dataArrayToNames(currentData, to);
     refreshView();
   }
 };
+
+//View
+function switchView() {}
 
 //Testing
 hideInputs();

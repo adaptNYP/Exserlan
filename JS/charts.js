@@ -1,29 +1,33 @@
+data.map(value => {
+  const date = new Date(value.HappendAt);
+  value.HappendAt = new Date(
+    2019,
+    7,
+    21,
+    date.getHours(),
+    date.getMinutes(),
+    date.getSeconds()
+  );
+});
 
-
-
-
-
-
-
-
-let startingtime = data[50].HappendAt;
+let startingTime = data[0].HappendAt;
 data
   .map(({ HappendAt }) => HappendAt)
   .forEach(HappendAt => {
-    if (HappendAt < startingtime) {
-      startingtime = HappendAt;
+    if (HappendAt < startingTime) {
+      startingTime = HappendAt;
     }
   });
-console.log(startingtime);
 
-
-
-
-
-
-
-
-
+//To be replaced
+let endTime = data[0].HappendAt;
+data
+  .map(({ HappendAt }) => HappendAt)
+  .forEach(HappendAt => {
+    if (HappendAt > endTime) {
+      endTime = HappendAt;
+    }
+  });
 
 
 const groupDataByName = data => {
@@ -42,14 +46,19 @@ const groupDataByName = data => {
   });
   return namesTemp;
 };
-const groupDataByQnLabel = data => {
+const groupDataByQnLabel = (data, time) => {
   let newData = [...new Set(data.map(({ QnLabel }) => QnLabel))].map(
     QnLabel => {
       return { QnLabel, data: [] };
     }
   );
   newData.map(value => {
-    value.data = data.filter(({ QnLabel }) => value.QnLabel == QnLabel);
+    value.data = data.filter(
+      ({ QnLabel, HappendAt }) => value.QnLabel == QnLabel && HappendAt <= time
+    );
+    value.data = [...new Set(value.data.map(({ Name }) => Name))].map(Name =>
+      value.data.find(s => s.Name == Name)
+    );
   });
   newData.sort((a, b) => {
     return a.QnLabel < b.QnLabel ? -1 : b.QnLabel < a.QnLabel ? 1 : 0;
@@ -58,11 +67,11 @@ const groupDataByQnLabel = data => {
 };
 console.log(data);
 console.log(groupDataByName(data));
-console.log(groupDataByQnLabel(data));
+console.log(groupDataByQnLabel(data, endTime));
 
 var ctx = document.getElementById("myChart").getContext("2d");
 var myChart = new Chart(ctx, {
-  type: "bar",
+  type: "horizontalBar",
   data: {
     labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
     datasets: [
@@ -101,6 +110,8 @@ var myChart = new Chart(ctx, {
     }
   }
 });
+myChart.options.data = [12, 19, 3, 5, 2, 20]
+myChart.update()
 
 //Data Duplication check
 const testArray = [
@@ -202,4 +213,3 @@ console.log(secondsToDate(dateToSeconds(today))); // Test
 slider.oninput = function() {
   document.getElementById("sliderOutput").innerHTML = formatTime(this.value);
 };
-
