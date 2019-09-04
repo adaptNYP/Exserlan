@@ -17,6 +17,11 @@
   <!-- Bootstrap core CSS -->
   <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 
+  <!-- Chart JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" rel="stylesheet" />
+
+
   <!-- Custom styles for this template -->
   <link href="css/metsan.css" rel="stylesheet">
 
@@ -58,8 +63,8 @@
         <button class="btn btn-success btn-sm dataButtons" onclick="exportToJsonFile()">Download JSON</button>
         <button class="btn btn-success btn-sm dataButtons" onclick="showChart()">Show Chart</button>
       </div>
-      <hr class="my dataButtons">
     </div>
+    <canvas id="chart" style="display: none"></canvas>
     <div id="studentsProgress">
       <p>Awaiting input...</p>
     </div>

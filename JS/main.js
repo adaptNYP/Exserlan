@@ -180,8 +180,18 @@ function worker() {
     currentData.sort((a, b) => new Date(b.HappendAt) - new Date(a.HappendAt));
 
     // Group According to Names
-    historicalData = dataArrayToNames(currentData, endTime);
+    historicalData = dataArrayToNames(currentData);
     containment = historicalData.concat(); //global
+    const chartData = dataArrayToQnLabel(currentData);
+
+    // Format Chart Max Value
+    myChart.options.scales.xAxes[0].ticks.suggestedMax = Math.max(
+      ...chartData.map(({ data }) => data.length)
+    );
+    myChart.update();
+
+    //Display
+    chartView(chartData);
     refreshView();
   }
 }
@@ -209,6 +219,27 @@ function dataArrayToNames(array, time = endTime) {
   return namesTemp;
 }
 
+function dataArrayToQnLabel(array, time = endTime) {
+  let newData = [...new Set(array.map(({ QnLabel }) => QnLabel))].map(
+    QnLabel => {
+      return { QnLabel, data: [] };
+    }
+  );
+  newData.map(value => {
+    value.data = array.filter(
+      ({ QnLabel, HappendAt, Answer }) =>
+        value.QnLabel == QnLabel && HappendAt <= time && Answer
+    );
+    value.data = [...new Set(value.data.map(({ Name }) => Name))].map(Name =>
+      value.data.find(s => s.Name == Name)
+    );
+  });
+  newData.sort((a, b) => {
+    return a.QnLabel < b.QnLabel ? -1 : b.QnLabel < a.QnLabel ? 1 : 0;
+  });
+  return newData;
+}
+
 function arraySortString(array, name, ascdesc = "desc") {
   return array.sort((a, b) => {
     return ascdesc == "desc"
@@ -227,7 +258,7 @@ function arraySortString(array, name, ascdesc = "desc") {
   });
 }
 
-var refreshView = () => {
+function refreshView() {
   document.getElementById("studentsProgress").innerHTML = "";
 
   if ("content" in document.createElement("template")) {
@@ -302,7 +333,51 @@ var refreshView = () => {
     // Find another way to add the rows to the table because
     // the HTML template element is not supported.
   }
-};
+}
+
+const ctx = document.getElementById("chart").getContext("2d");
+const myChart = new Chart(ctx, {
+  type: "horizontalBar",
+  data: {},
+  options: {
+    maintainAspectRatio: false,
+    scales: {
+      xAxes: [
+        {
+          ticks: {
+            beginAtZero: true,
+            stepSize: 1
+          }
+        }
+      ]
+    }
+  }
+});
+
+function chartView(chartData) {
+  const labels = chartData.map(({ QnLabel }) => QnLabel);
+  myChart.data = {
+    labels,
+    datasets: [
+      {
+        label: "# of Answer",
+        data: chartData.map(({ data }) => data.length),
+        backgroundColor: labels.map(() => random_bg_color()),
+        borderColor: labels.map(() => random_bg_color()),
+        borderWidth: 1
+      }
+    ]
+  };
+  myChart.update();
+}
+
+function random_bg_color() {
+  var x = Math.floor(Math.random() * 256);
+  var y = Math.floor(Math.random() * 256);
+  var z = Math.floor(Math.random() * 256);
+  var bgColor = "rgb(" + x + "," + y + "," + z + ")";
+  return bgColor;
+}
 
 function sortName() {
   if (sortNameBy == "desc") {
@@ -370,14 +445,14 @@ function toggleRefreshMode() {
     $(".dataButtons").hide();
   }
 }
-let showChart = false;
+let sChart = false;
 function showChart() {
-  if (showChart) {
-    showChart = true;
-    $("chart").show();
+  if (sChart) {
+    $("#chart").hide();
+    sChart = false;
   } else {
-    $("chart").hide();
-    showChart = false;
+    sChart = true;
+    $("#chart").show();
   }
 }
 
@@ -416,6 +491,7 @@ slider.oninput = function() {
   if (currentData) {
     const to = secondsToDate(this.value);
     historicalData = dataArrayToNames(currentData, to);
+    chartView(dataArrayToQnLabel(currentData, to));
     refreshView();
   }
 };
