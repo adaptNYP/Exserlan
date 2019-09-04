@@ -29,7 +29,6 @@ data
     }
   });
 
-
 const groupDataByName = data => {
   const namesTemp = [...new Set(data.map(({ Name }) => Name))].map(Name => {
     return { name: Name, progress: [] };
@@ -54,8 +53,8 @@ const groupDataByQnLabel = (data, time) => {
   );
   newData.map(value => {
     value.data = data.filter(
-      ({ QnLabel, HappendAt }) => value.QnLabel == QnLabel && HappendAt <= time
-    );
+      ({ QnLabel, HappendAt, Answer }) => value.QnLabel == QnLabel && HappendAt <= time && Answer
+    );  
     value.data = [...new Set(value.data.map(({ Name }) => Name))].map(Name =>
       value.data.find(s => s.Name == Name)
     );
@@ -65,53 +64,70 @@ const groupDataByQnLabel = (data, time) => {
   });
   return newData;
 };
-console.log(data);
-console.log(groupDataByName(data));
-console.log(groupDataByQnLabel(data, endTime));
+// console.log(data);
+// console.log(groupDataByName(data));
+// console.log(groupDataByQnLabel(data, endTime));
+
+function random_bg_color() {
+  var x = Math.floor(Math.random() * 256);
+  var y = Math.floor(Math.random() * 256);
+  var z = Math.floor(Math.random() * 256);
+  var bgColor = "rgb(" + x + "," + y + "," + z + ")";
+  return bgColor;
+}
+
+let chartData = groupDataByQnLabel(data, endTime);
+let chartInfo = {
+  labels: [],
+  datasets: [
+    {
+      label: "Apple",
+      data: [],
+      backgroundColor: [],
+      borderColor: [],
+      borderWidth: 1
+    }
+  ]
+};
+console.log(chartData);
+chartInfo.labels = chartData.map(({ QnLabel }) => QnLabel);
+chartInfo.data = chartData.map(({ data }) => data.length);
+chartInfo.backgroundColor = chartInfo.labels.map(() => random_bg_color());
+chartInfo.borderColor = chartInfo.labels.map(() => random_bg_color());
 
 var ctx = document.getElementById("myChart").getContext("2d");
 var myChart = new Chart(ctx, {
   type: "horizontalBar",
   data: {
-    labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
+    labels: chartInfo.labels,
     datasets: [
       {
-        label: "# of Votes",
-        data: [12, 19, 3, 5, 2, 3],
-        backgroundColor: [
-          "rgba(255, 99, 132, 0.2)",
-          "rgba(54, 162, 235, 0.2)",
-          "rgba(255, 206, 86, 0.2)",
-          "rgba(75, 192, 192, 0.2)",
-          "rgba(153, 102, 255, 0.2)",
-          "rgba(255, 159, 64, 0.2)"
-        ],
-        borderColor: [
-          "rgba(255, 99, 132, 1)",
-          "rgba(54, 162, 235, 1)",
-          "rgba(255, 206, 86, 1)",
-          "rgba(75, 192, 192, 1)",
-          "rgba(153, 102, 255, 1)",
-          "rgba(255, 159, 64, 1)"
-        ],
+        label: "# of Answer",
+        data: chartInfo.data,
+        backgroundColor: chartInfo.backgroundColor,
+        borderColor: chartInfo.borderColor,
         borderWidth: 1
       }
     ]
   },
   options: {
+    maintainAspectRatio: false, 
     scales: {
-      yAxes: [
+      xAxes: [
         {
           ticks: {
-            beginAtZero: true
+            beginAtZero: true,
+            stepSize: 1
           }
         }
       ]
     }
   }
 });
-myChart.options.data = [12, 19, 3, 5, 2, 20]
-myChart.update()
+// myChart.data.datasets.forEach(dataset => {
+//   dataset.data = 1;
+// });
+// myChart.update();
 
 //Data Duplication check
 const testArray = [
@@ -141,7 +157,7 @@ function arraySortString(array, name, ascdesc = "desc") {
   });
 }
 
-console.log(arraySortString(data, "Name"));
+// console.log(arraySortString(data, "Name"));
 
 testArray.sort((a, b) => new Date(b.HappendAt) - new Date(a.HappendAt));
 const newArray = [...new Set(testArray.map(({ Name }) => Name))].map(
@@ -163,7 +179,7 @@ newArray.map(value => {
   );
   value.progress = holder;
 });
-console.log(newArray);
+// console.log(newArray);
 // [...new Set(currentData.map(({ Name, QnLabel })))]
 
 //Slider
@@ -207,8 +223,8 @@ function secondsToDate(s) {
     seconds
   );
 }
-console.log(today);
-console.log(secondsToDate(dateToSeconds(today))); // Test
+// console.log(today);
+// console.log(secondsToDate(dateToSeconds(today))); // Test
 
 slider.oninput = function() {
   document.getElementById("sliderOutput").innerHTML = formatTime(this.value);

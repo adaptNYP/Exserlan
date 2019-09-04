@@ -56,13 +56,9 @@
           data</a>
         <a href="#" class="btn btn-success btn-sm dataButtons" onclick="sortName()">Sort by Name</a>
         <button class="btn btn-success btn-sm dataButtons" onclick="exportToJsonFile()">Download JSON</button>
+        <button class="btn btn-success btn-sm dataButtons" onclick="showChart()">Show Chart</button>
       </div>
       <hr class="my dataButtons">
-      <div class="dataButtons">
-        <input type="range" class="slider" id="myRange">
-        <p>Time: <span id="sliderOutput"></span></p>
-        <p>Current Time: <span id="now"></span></p>
-      </div>
     </div>
     <div id="studentsProgress">
       <p>Awaiting input...</p>
@@ -91,24 +87,32 @@
   <template id="studentTemplate">
     <div class="row text-center student">
       <div class="col-3">
-        <div class="card h-100">
+        <div class="card h-100" style="border: 0;">
           <div class="card-body">
             <p class="card-text studentName"></p>
           </div>
         </div>
       </div>
       <div class="col-9">
-        <div class="card h-100">
+        <div class="card h-100" style="border: 0;">
           <div class="card-body cellBody">
           </div>
         </div>
       </div>
     </div>
+    <hr>
   </template>
   <!-- cellTemplates Template-->
   <template id="cellTemplate">
     <div class="progressCell"></div>
   </template>
+
+  <div class="dataButtons"
+    style="padding: 0px 10px 10px 10px; position: fixed;display: block;bottom: -1px;width: 100%;background: #e9ecef;">
+    <p style="justify-content: space-evenly; display:flex; margin: 0;"><span>Time: <span
+          id="sliderOutput"></span></span><span>Current Time: <span id="now"></span></span></p>
+    <input type="range" class="slider" id="myRange">
+  </div>
 </body>
 
 </html>

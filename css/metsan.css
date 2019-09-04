@@ -11,13 +11,14 @@ footer {
 
 .studentName {
   word-wrap: break-word;
-  position: absolute;
+  /* position: absolute; */
 }
 
 .card-body {
   text-align: left;
   font-weight: bold;
   position: relative;
+  padding: 0;
 }
 
 .row {
@@ -98,7 +99,7 @@ footer {
   background-color: #fefefe;
   margin: auto;
   padding: 0;
-  border: 1px solid #888;
+  /* border: 1px solid #888; */
   width: 80%;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   -webkit-animation-name: animatetop;
@@ -171,8 +172,8 @@ footer {
   background: #d3d3d3;
   outline: none;
   opacity: 0.7;
-  -webkit-transition: .2s;
-  transition: opacity .2s;
+  -webkit-transition: 0.2s;
+  transition: opacity 0.2s;
 }
 
 .slider:hover {
@@ -185,7 +186,7 @@ footer {
   width: 25px;
   height: 25px;
   border-radius: 50%;
-  background: #4CAF50;
+  background: #4caf50;
   cursor: pointer;
 }
 
@@ -193,6 +194,6 @@ footer {
   width: 25px;
   height: 25px;
   border-radius: 50%;
-  background: #4CAF50;
+  background: #4caf50;
   cursor: pointer;
 }

@@ -370,7 +370,18 @@ function toggleRefreshMode() {
     $(".dataButtons").hide();
   }
 }
+let showChart = false;
+function showChart() {
+  if (showChart) {
+    showChart = true;
+    $("chart").show();
+  } else {
+    $("chart").hide();
+    showChart = false;
+  }
+}
 
+//Slider Functions
 function dateToSeconds(date = new Date()) {
   return getSeconds(date.getSeconds(), date.getMinutes(), date.getHours());
 }
