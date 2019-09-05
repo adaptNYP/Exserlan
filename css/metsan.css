@@ -197,3 +197,7 @@ footer {
   background: #4caf50;
   cursor: pointer;
 }
+
+.breakword {
+  word-wrap: break-word;
+}

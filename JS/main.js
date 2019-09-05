@@ -3,6 +3,7 @@ var historicalData = [];
 var globalCounter = 0;
 var allNames = [];
 let containment = [];
+let globalChartData = [];
 var timer;
 const TIMER_PERIOD = 5000;
 var autoRefresh = true;
@@ -183,7 +184,7 @@ function worker() {
       ...chartData.map(({ data }) => data.length)
     );
     myChart.update();
-
+    globalChartData = chartData;
     //Display
     chartView(chartData);
     refreshView();
@@ -205,9 +206,11 @@ function dataArrayToNames(array, time = endTime) {
       .map(({ QnLabel, Code, Answer, HappendAt }) => {
         return { qnLabel: QnLabel, code: Code, answer: Answer, HappendAt };
       });
-    value.progress = [
-      ...new Set(value.progress.map(({ qnLabel }) => qnLabel))
-    ].map(qnLabel => value.progress.find(s => qnLabel == s.qnLabel));
+    value.progress = [...new Set(value.progress.map(({ qnLabel }) => qnLabel))]
+      .map(qnLabel => value.progress.find(s => qnLabel == s.qnLabel))
+      .sort((a, b) => {
+        return a.qnLabel < b.qnLabel ? -1 : b.qnLabel < a.qnLabel ? 1 : 0;
+      });
   });
   arraySortString(namesTemp, "name");
   return namesTemp;
@@ -335,8 +338,41 @@ const myChart = new Chart(ctx, {
   type: "horizontalBar",
   data: {},
   options: {
+    legend: {
+      display: false
+    },
+    aspectRatio: 1,
+    responsive: false,
+    maintainAspectRatio: false,
+    animation: {
+      duration: 0,
+      onComplete: function() {
+        var chartInstance = this.chart,
+          ctx = chartInstance.ctx;
+        ctx.font = Chart.helpers.fontString(
+          Chart.defaults.global.defaultFontSize,
+          "bold",
+          Chart.defaults.global.defaultFontFamily
+        );
+        ctx.textAlign = "top";
+        ctx.textBaseline = "top";
+        this.data.datasets.forEach(function(dataset, i) {
+          var meta = chartInstance.controller.getDatasetMeta(i);
+          meta.data.forEach(function(bar, index) {
+            var data = dataset.data[index];
+            if (data != 0)
+              ctx.fillText(data, bar._model.x - 10, bar._model.y - 5);
+          });
+        });
+      }
+    },
     maintainAspectRatio: false,
     scales: {
+      yAxes: [
+        {
+          barPercentage: 1
+        }
+      ],
       xAxes: [
         {
           ticks: {
@@ -349,14 +385,58 @@ const myChart = new Chart(ctx, {
   }
 });
 
+document.getElementById("chart").onclick = function(evt) {
+  var activePoints = myChart.getElementsAtEvent(evt);
+  if (activePoints.length > 0) {
+    var clickedElementindex = activePoints[0]["_index"];
+    var label = myChart.data.labels[clickedElementindex];
+    console.log(historicalData);
+
+    const progressQNData = historicalData
+      .map(user => {
+        progressQN = user.progress.filter(
+          ({ qnLabel, answer }) => label == qnLabel && answer
+        )[0];
+        if (progressQN)
+          return {
+            name: user.name,
+            answer: progressQN.answer,
+            code: progressQN.code
+          };
+      })
+      .filter(value => value);
+
+    modal.querySelector(".modal-header h2").innerHTML = label;
+
+    let message = `
+    <div class="row" style="font-weight: bold;text-align: center;">
+        <div class="col-4 breakword">Name</div>
+        <div class="col-8 breakword">Answer</div>
+    </div>`;
+
+    progressQNData.map(value => {
+      message += `
+      <hr>
+      <div class="row" style="font-size: 0.8em;">
+        <div class="col-4 breakword">${value.name}</div>
+        <div class="col-8 breakword">${value.answer}</div>
+      </div>
+      `;
+    });
+
+    modal.querySelector(".modal-body").innerHTML = message;
+    modal.style.display = "block";
+  }
+};
+
 function chartView(chartData) {
+  chartData = chartData.filter(value => value.data.length != 0);
   const labels = chartData.map(({ QnLabel }) => QnLabel);
   const labelColors = labels.map(QnLabel => getLabelColor(QnLabel));
   myChart.data = {
     labels,
     datasets: [
       {
-        label: "# of Answer",
         data: chartData.map(({ data }) => data.length),
         backgroundColor: labelColors,
         borderColor: labelColors,
@@ -365,6 +445,7 @@ function chartView(chartData) {
     ]
   };
   myChart.update();
+  // myChart.resize();
 }
 
 function getLabelColor(QnLabel) {
@@ -494,7 +575,8 @@ slider.oninput = function() {
   if (currentData) {
     const to = secondsToDate(this.value);
     historicalData = dataArrayToNames(currentData, to);
-    chartView(dataArrayToQnLabel(currentData, to));
+    globalChartData = dataArrayToQnLabel(currentData, to);
+    chartView(globalChartData);
     refreshView();
   }
 };

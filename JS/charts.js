@@ -53,8 +53,9 @@ const groupDataByQnLabel = (data, time) => {
   );
   newData.map(value => {
     value.data = data.filter(
-      ({ QnLabel, HappendAt, Answer }) => value.QnLabel == QnLabel && HappendAt <= time && Answer
-    );  
+      ({ QnLabel, HappendAt, Answer }) =>
+        value.QnLabel == QnLabel && HappendAt <= time && Answer
+    );
     value.data = [...new Set(value.data.map(({ Name }) => Name))].map(Name =>
       value.data.find(s => s.Name == Name)
     );
@@ -111,7 +112,30 @@ var myChart = new Chart(ctx, {
     ]
   },
   options: {
-    maintainAspectRatio: false, 
+    responsive: false,
+    maintainAspectRatio: false,
+    animation: {
+      duration: 1,
+      onComplete: function() {
+        var chartInstance = this.chart,
+          ctx = chartInstance.ctx;
+        ctx.font = Chart.helpers.fontString(
+          Chart.defaults.global.defaultFontSize,
+          "bold",
+          Chart.defaults.global.defaultFontFamily
+        );
+        ctx.textAlign = "top";
+        ctx.textBaseline = "top";
+        this.data.datasets.forEach(function(dataset, i) {
+          var meta = chartInstance.controller.getDatasetMeta(i);
+          meta.data.forEach(function(bar, index) {
+            var data = dataset.data[index];
+            ctx.fillText(data, bar._model.x - 10, bar._model.y - 5);
+          });
+        });
+      }
+    },
+    maintainAspectRatio: false,
     scales: {
       xAxes: [
         {
@@ -121,7 +145,7 @@ var myChart = new Chart(ctx, {
           }
         }
       ]
-    }
+    },
   }
 });
 // myChart.data.datasets.forEach(dataset => {
@@ -229,15 +253,3 @@ function secondsToDate(s) {
 slider.oninput = function() {
   document.getElementById("sliderOutput").innerHTML = formatTime(this.value);
 };
-
-
-
-
-
-
-
-
-
-
-
-
