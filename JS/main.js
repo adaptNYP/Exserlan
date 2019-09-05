@@ -152,7 +152,7 @@ function worker() {
       });
     slider.setAttribute("min", dateToSeconds(startingTime));
 
-    //To be replaced
+    //To be replaced with current time
     endTime = currentData[0].HappendAt;
     currentData
       .map(({ HappendAt }) => HappendAt)
@@ -162,16 +162,10 @@ function worker() {
         }
       });
     slider.setAttribute("max", dateToSeconds(endTime));
-    console.log(dateToSeconds(endTime));
     slider.setAttribute("value", dateToSeconds(endTime));
-    console.log(slider);
-    document.getElementById("now").innerHTML =
-      endTime.getHours() +
-      ":" +
-      endTime.getMinutes() +
-      ":" +
-      endTime.getSeconds();
-
+    document.getElementById(
+      "now"
+    ).innerHTML = `${endTime.getHours()}:${endTime.getMinutes()}:${endTime.getSeconds()}`;
     document.getElementById("sliderOutput").innerHTML = formatTimeToHTML(
       endTime
     );
@@ -335,6 +329,7 @@ function refreshView() {
   }
 }
 
+// Chart
 const ctx = document.getElementById("chart").getContext("2d");
 const myChart = new Chart(ctx, {
   type: "horizontalBar",
@@ -356,14 +351,15 @@ const myChart = new Chart(ctx, {
 
 function chartView(chartData) {
   const labels = chartData.map(({ QnLabel }) => QnLabel);
+  const labelColors = labels.map(QnLabel => getLabelColor(QnLabel));
   myChart.data = {
     labels,
     datasets: [
       {
         label: "# of Answer",
         data: chartData.map(({ data }) => data.length),
-        backgroundColor: labels.map(() => random_bg_color()),
-        borderColor: labels.map(() => random_bg_color()),
+        backgroundColor: labelColors,
+        borderColor: labelColors,
         borderWidth: 1
       }
     ]
@@ -371,12 +367,19 @@ function chartView(chartData) {
   myChart.update();
 }
 
-function random_bg_color() {
-  var x = Math.floor(Math.random() * 256);
-  var y = Math.floor(Math.random() * 256);
-  var z = Math.floor(Math.random() * 256);
-  var bgColor = "rgb(" + x + "," + y + "," + z + ")";
-  return bgColor;
+function getLabelColor(QnLabel) {
+  return (() => {
+    switch (QnLabel.charAt(0)) {
+      case "A":
+        return "#ffccff";
+      case "B":
+        return "lightyellow";
+      case "C":
+        return "lightblue";
+      case "D":
+        return "#ccff99";
+    }
+  })();
 }
 
 function sortName() {
@@ -499,7 +502,7 @@ slider.oninput = function() {
 //View
 function switchView() {}
 
-//Testing
+//Testing //Remove after testing
 hideInputs();
 checkForFirstDataStream();
 

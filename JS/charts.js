@@ -229,3 +229,15 @@ function secondsToDate(s) {
 slider.oninput = function() {
   document.getElementById("sliderOutput").innerHTML = formatTime(this.value);
 };
+
+
+
+
+
+
+
+
+
+
+
+
