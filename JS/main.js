@@ -47,6 +47,7 @@ function dynamicFeedback() {
       modal.querySelector(".modal-body").innerHTML = this.getAttribute(
         "data-answer"
       );
+      $(".chartButton").hide();
       modal.style.display = "block";
       clicks = 0;
     };
@@ -385,12 +386,27 @@ const myChart = new Chart(ctx, {
   }
 });
 
+let chartInfo = "name";
+function chartInfoToggle() {
+  if (chartInfo == "name") {
+    $("#chartToggle").html("By Answer")
+    chartInfo = "answer";
+    refreshChartInfo();
+  } else {
+    $("#chartToggle").html("By Name")
+    chartInfo = "name";
+    refreshChartInfo();
+  }
+}
+
+let currentChartLabel = "";
+let chartInfos = [];
 document.getElementById("chart").onclick = function(evt) {
   var activePoints = myChart.getElementsAtEvent(evt);
   if (activePoints.length > 0) {
     var clickedElementindex = activePoints[0]["_index"];
     var label = myChart.data.labels[clickedElementindex];
-    console.log(historicalData);
+    currentChartLabel = label;
 
     const progressQNData = historicalData
       .map(user => {
@@ -407,14 +423,19 @@ document.getElementById("chart").onclick = function(evt) {
       .filter(value => value);
 
     modal.querySelector(".modal-header h2").innerHTML = label;
-
-    let message = `
-    <div class="row" style="font-weight: bold;text-align: center;">
-        <div class="col-4 breakword">Name</div>
-        <div class="col-8 breakword">Answer</div>
-    </div>`;
-
-    progressQNData.map(value => {
+    chartInfos = progressQNData;
+    refreshChartInfo();
+  }
+};
+function refreshChartInfo() {
+  let message = "";
+  if (chartInfo == "name") {
+    message = `
+      <div class="row" style="font-weight: bold;text-align: center;">
+          <div class="col-4 breakword">Name</div>
+          <div class="col-8 breakword">Answer</div>
+      </div>`;
+    chartInfos.map(value => {
       message += `
       <hr>
       <div class="row" style="font-size: 0.8em;">
@@ -423,11 +444,37 @@ document.getElementById("chart").onclick = function(evt) {
       </div>
       `;
     });
-
-    modal.querySelector(".modal-body").innerHTML = message;
-    modal.style.display = "block";
+  } else {
+    message = `
+      <div class="row" style="font-weight: bold;text-align: center;">
+          <div class="col-4 breakword">Number</div>
+          <div class="col-8 breakword">Answer</div>
+      </div>`;
+    [...new Set(chartInfos.map(({ answer }) => answer))]
+      .map(uniqueanswer => {
+        return {
+          number: chartInfos.filter(({ answer }) => answer == uniqueanswer)
+            .length,
+          uniqueanswer
+        };
+      })
+      .sort((a, b) => {
+        return a.number > b.number ? -1 : b.number > a.number ? 1 : 0;
+      })
+      .forEach(value => {
+        message += `
+      <hr>
+      <div class="row" style="font-size: 0.8em;">
+        <div class="col-4 breakword">${value.number}</div>
+        <div class="col-8 breakword">${value.uniqueanswer}</div>
+      </div>
+    `;
+      });
   }
-};
+  modal.querySelector(".modal-body").innerHTML = message;
+  modal.style.display = "block";
+  $(".chartButton").show();
+}
 
 function chartView(chartData) {
   chartData = chartData.filter(value => value.data.length != 0);
@@ -529,6 +576,7 @@ function toggleRefreshMode() {
     $(".dataButtons").hide();
   }
 }
+
 let sChart = false;
 function showChart() {
   if (sChart) {
