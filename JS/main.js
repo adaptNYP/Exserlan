@@ -389,11 +389,11 @@ const myChart = new Chart(ctx, {
 let chartInfo = "name";
 function chartInfoToggle() {
   if (chartInfo == "name") {
-    $("#chartToggle").html("By Answer")
+    $("#chartToggle").html("By Answer");
     chartInfo = "answer";
     refreshChartInfo();
   } else {
-    $("#chartToggle").html("By Name")
+    $("#chartToggle").html("By Name");
     chartInfo = "name";
     refreshChartInfo();
   }
@@ -428,6 +428,8 @@ document.getElementById("chart").onclick = function(evt) {
   }
 };
 function refreshChartInfo() {
+  togglePieChart = false;
+  $(".modal-body").removeClass("zeroPadding")
   let message = "";
   if (chartInfo == "name") {
     message = `
@@ -585,6 +587,75 @@ function showChart() {
   } else {
     sChart = true;
     $("#chart").show();
+  }
+}
+
+let togglePieChart = false;
+const colors = ["#fcf9ea", "#badfdb", "#f8a978", "#ffc5a1"];
+function pieChartToggle() {
+  if (!togglePieChart) {
+    togglePieChart = true;
+    modal.querySelector(
+      ".modal-body"
+    ).innerHTML = `<canvas id="piechart"></canvas>`;
+    $(".modal-body").addClass("zeroPadding")
+    const piectx = document.getElementById("piechart").getContext("2d");
+    let answers = [...new Set(chartInfos.map(({ answer }) => answer))]
+      .map(uniqueanswer => {
+        return {
+          number: chartInfos.filter(({ answer }) => answer == uniqueanswer)
+            .length,
+          uniqueanswer
+        };
+      })
+      .sort((a, b) => {
+        return a.number > b.number ? -1 : b.number > a.number ? 1 : 0;
+      });
+    const total = answers.map(({number}) => number).reduce((a,b) => a + b, 0)
+    const myPieChart = new Chart(piectx, {
+      type: "pie",
+      data: {
+        datasets: [
+          {
+            data: answers.map(({ number }) => number),
+            backgroundColor: answers.map((value, index) => colors[index])
+          }
+        ],
+        labels: answers.map(({ uniqueanswer }) => uniqueanswer)
+      },
+      options: {
+        aspectRatio: 1,
+        responsive: false,
+        animation: {
+          duration: 0,
+          onComplete: function() {
+            var chartInstance = this.chart,
+              ctx = chartInstance.ctx;
+            ctx.font = Chart.helpers.fontString(
+              Chart.defaults.global.defaultFontSize,
+              "bold",
+              Chart.defaults.global.defaultFontFamily
+            );
+            ctx.textAlign = "top";
+            ctx.textBaseline = "top";
+            this.data.datasets.forEach(function(dataset, i) {
+              var meta = chartInstance.controller.getDatasetMeta(i);
+              meta.data.forEach(function(element, index) {
+                var data = dataset.data[index];
+                if (data != 0) {
+                  var padding = 5;
+                  var position = element.tooltipPosition();
+                  ctx.fillText(data/total*100 + "%", position.x, position.y - 16 / 2 - padding);
+                }
+              });
+            });
+          }
+        }
+      }
+    });
+  } else {
+    togglePieChart = false;
+    refreshChartInfo();
   }
 }
 

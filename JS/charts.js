@@ -145,7 +145,7 @@ var myChart = new Chart(ctx, {
           }
         }
       ]
-    },
+    }
   }
 });
 // myChart.data.datasets.forEach(dataset => {
@@ -253,3 +253,51 @@ function secondsToDate(s) {
 slider.oninput = function() {
   document.getElementById("sliderOutput").innerHTML = formatTime(this.value);
 };
+
+//Pie Chart
+const piectx = document.getElementById("piechart").getContext("2d");
+const myPieChart = new Chart(piectx, {
+  type: "pie",
+  data: {
+    datasets: [
+      {
+        data: [10, 20, 30],
+        backgroundColor: ["red", "yellow", "blue"]
+      }
+    ],
+    labels: ["Red", "Yellow", "Blue"]
+  },
+  options: {
+    aspectRatio: 1,
+    responsive: false,
+    animation: {
+      duration: 0,
+      onComplete: function() {
+        var chartInstance = this.chart,
+          ctx = chartInstance.ctx;
+        ctx.font = Chart.helpers.fontString(
+          Chart.defaults.global.defaultFontSize,
+          "bold",
+          Chart.defaults.global.defaultFontFamily
+        );
+        ctx.textAlign = "top";
+        ctx.textBaseline = "top";
+        this.data.datasets.forEach(function(dataset, i) {
+          var meta = chartInstance.controller.getDatasetMeta(i);
+          meta.data.forEach(function(element, index) {
+            var data = dataset.data[index];
+            if (data != 0) {
+              var padding = 5;
+              var position = element.tooltipPosition();
+              ctx.fillText(
+                data + "%",
+                position.x,
+                position.y - 16 / 2 - padding
+              );
+            }
+          });
+        });
+      }
+    }
+  }
+});
