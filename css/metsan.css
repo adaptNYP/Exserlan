@@ -23,6 +23,7 @@ footer {
 
 .zeroPadding {
   padding: 0 !important;
+  margin: auto;
 }
 
 .row {

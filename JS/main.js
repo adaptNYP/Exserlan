@@ -389,11 +389,11 @@ const myChart = new Chart(ctx, {
 let chartInfo = "name";
 function chartInfoToggle() {
   if (chartInfo == "name") {
-    $("#chartToggle").html("By Answer");
+    $("#chartToggle").html("Toggle List By Answer");
     chartInfo = "answer";
     refreshChartInfo();
   } else {
-    $("#chartToggle").html("By Name");
+    $("#chartToggle").html("Toggle List By Name");
     chartInfo = "name";
     refreshChartInfo();
   }
@@ -429,7 +429,7 @@ document.getElementById("chart").onclick = function(evt) {
 };
 function refreshChartInfo() {
   togglePieChart = false;
-  $(".modal-body").removeClass("zeroPadding")
+  $(".modal-body").removeClass("zeroPadding");
   let message = "";
   if (chartInfo == "name") {
     message = `
@@ -591,36 +591,49 @@ function showChart() {
 }
 
 let togglePieChart = false;
-const colors = ["#fcf9ea", "#badfdb", "#f8a978", "#ffc5a1"];
 function pieChartToggle() {
   if (!togglePieChart) {
     togglePieChart = true;
     modal.querySelector(
       ".modal-body"
     ).innerHTML = `<canvas id="piechart"></canvas>`;
-    $(".modal-body").addClass("zeroPadding")
+    $(".modal-body").addClass("zeroPadding");
+
     const piectx = document.getElementById("piechart").getContext("2d");
-    let answers = [...new Set(chartInfos.map(({ answer }) => answer))]
+
+    const uniqueanswer = [...new Set(chartInfos.map(({ answer }) => answer))];
+    console.log(uniqueanswer)
+    let answers = uniqueanswer
       .map(uniqueanswer => {
         return {
           number: chartInfos.filter(({ answer }) => answer == uniqueanswer)
             .length,
-          uniqueanswer
+          uniqueanswer,
+          code: chartInfos.find(s => s.answer == uniqueanswer).code
         };
       })
       .sort((a, b) => {
         return a.number > b.number ? -1 : b.number > a.number ? 1 : 0;
       });
-    const total = answers.map(({number}) => number).reduce((a,b) => a + b, 0)
-    const myPieChart = new Chart(piectx, {
+    const total = answers
+      .map(({ number }) => number)
+      .reduce((a, b) => a + b, 0);
+
+    const datasets = [
+      {
+        data: answers.map(({ number }) => number),
+        backgroundColor: answers.map(({ code }, index) => {
+          if (code == "codeGreen") return "#4baea0";
+          else red = Math.floor(Math.random() * 175) + 50;
+          return `rgb(254, ${red}, ${red})`;
+        })
+      }
+    ];
+
+    new Chart(piectx, {
       type: "pie",
       data: {
-        datasets: [
-          {
-            data: answers.map(({ number }) => number),
-            backgroundColor: answers.map((value, index) => colors[index])
-          }
-        ],
+        datasets,
         labels: answers.map(({ uniqueanswer }) => uniqueanswer)
       },
       options: {
@@ -645,7 +658,11 @@ function pieChartToggle() {
                 if (data != 0) {
                   var padding = 5;
                   var position = element.tooltipPosition();
-                  ctx.fillText(data/total*100 + "%", position.x, position.y - 16 / 2 - padding);
+                  ctx.fillText(
+                    (data / total) * 100 + "%",
+                    position.x,
+                    position.y - 16 / 2 - padding
+                  );
                 }
               });
             });
