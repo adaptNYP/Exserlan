@@ -63,21 +63,22 @@
         <button class="btn btn-success btn-sm dataButtons" onclick="exportToJsonFile()">Download JSON</button>
         <button class="btn btn-success btn-sm dataButtons" onclick="exportToCSV()">Download CSV</button>
         <button class="btn btn-success btn-sm dataButtons" onclick="showChart()">Show Chart</button>
- 
       </div>
       <div class="dataButtons">
         <hr>
         <p>Circle = Got answer, Square = No Answer</p>
       </div>
     </div>
-    <canvas id="chart" style="display: none"></canvas>
+    <div class="chartHeight" style="display: none">
+      <canvas id="chart" style="display: none"></canvas>
+    </div>
     <div id="studentsProgress">
       <p>Awaiting input...</p>
     </div>
   </div>
   <!-- The Modal -->
   <div id="myModal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content" style="width: 92%;">
       <div class="modal-header" style="display: block;">
         <span class="close">&times;</span>
         <h2>Modal Header</h2>

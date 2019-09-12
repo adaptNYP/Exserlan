@@ -28,11 +28,22 @@
     <p>Time: <span id="sliderOutput"></span></p>
     <p>Current Time: <span id="now"></span></p>
   </div>
+  <style>
+    .fixed-height-chart {
+      height: 1000px;
+      border: 1px solid black;
+    }
+  </style>
 </head>
 
 <body>
+  <div class="fixed-height-chart">
+    <canvas id="favorite-colors"></canvas>
+  </div>
+  <div class="fixed-height-chart">
+    <canvas id="myChart"></canvas>
+  </div>
   <div class="container">
-    <canvas id="myChart" height="500px"></canvas>
     <canvas id="piechart"></canvas>
   </div>
   <!-- Custom styles for this template -->

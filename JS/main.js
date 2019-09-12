@@ -17,6 +17,9 @@ let today = new Date("2019-08-21T08:52:24.0545633"); //To be changed without inp
 let startingTime = new Date(),
   endTime = new Date();
 
+let running = false;
+let resolvedArray = [];
+
 let slider = document.getElementById("myRange");
 
 const INITIAL_RUNNING_MSG = "Click on 'Stop' to terminate the app.";
@@ -207,7 +210,12 @@ function dataArrayToNames(array, time = endTime) {
     value.progress = array
       .filter(({ Name, HappendAt }) => value.name == Name && HappendAt <= time)
       .map(({ QnLabel, Code, Answer, HappendAt }) => {
-        return { qnLabel: QnLabel, code: Code, answer: Answer, HappendAt };
+        return {
+          qnLabel: QnLabel,
+          code: Code,
+          answer: Answer,
+          happendAt: HappendAt
+        };
       });
     value.progress = [...new Set(value.progress.map(({ qnLabel }) => qnLabel))]
       .map(qnLabel => value.progress.find(s => qnLabel == s.qnLabel))
@@ -343,12 +351,11 @@ const myChart = new Chart(ctx, {
   type: "horizontalBar",
   data: {},
   options: {
-    // legend: {
-    //   display: false
-    // },
     aspectRatio: 1,
-    responsive: false,
     maintainAspectRatio: false,
+    onResize: () => {
+      console.log("asdasd");
+    },
     animation: {
       duration: 0,
       onComplete: function() {
@@ -371,7 +378,6 @@ const myChart = new Chart(ctx, {
         });
       }
     },
-    maintainAspectRatio: false,
     scales: {
       yAxes: [
         {
@@ -419,11 +425,15 @@ document.getElementById("chart").onclick = function(evt) {
         progressQN = user.progress.filter(
           ({ qnLabel, answer }) => label == qnLabel && answer
         )[0];
+        let { answer, code, qnLabel, happendAt, resolved } = progressQN;
         if (progressQN)
           return {
             name: user.name,
-            answer: progressQN.answer,
-            code: progressQN.code
+            answer,
+            code,
+            qnLabel,
+            happendAt,
+            resolved
           };
       })
       .filter(value => value);
@@ -441,14 +451,28 @@ function refreshChartInfo() {
     message = `
       <div class="row" style="font-weight: bold;text-align: center;">
           <div class="col-4 breakword">Name</div>
-          <div class="col-8 breakword">Answer</div>
+          <div class="col-6 breakword">Answer</div>
+          <div class="col-2 breakword">UR</div>
       </div>`;
-    chartInfos.map(value => {
+    chartInfos.map((value, index) => {
       message += `
       <hr>
       <div class="row" style="font-size: 0.8em;">
-        <div class="col-4 breakword">${value.name}</div>
-        <div class="col-8 breakword">${value.answer}</div>
+        <div class="col-4 breakword tableCenter">${value.name}</div>
+        <div class="col-6 breakword tableCenter">${value.answer}</div>
+        <div class="col-2 breakword" style="display: flex;">
+          <div data-index ="${index}" onclick="tableResolve(this)" class="${
+        value.code == "codeGreen"
+          ? "tableGreen"
+          : value.code == "codeRed"
+          ? value.resolved
+            ? "tableResolvedRed"
+            : "tableUnresolvedRed"
+          : value.resolved
+          ? "tableResolvedOrange"
+          : "tableUnresolvedOrange"
+      }" style="border-radius: 50%; height: 20px; width: 20px; margin: auto;"></div>
+        </div>
       </div>
       `;
     });
@@ -644,10 +668,12 @@ let sChart = false;
 function showChart() {
   if (sChart) {
     $("#chart").hide();
+    $(".chartHeight").hide();
     sChart = false;
   } else {
     sChart = true;
     $("#chart").show();
+    $(".chartHeight").show();
   }
 }
 
@@ -857,5 +883,39 @@ function exportToCSV() {
       link.click();
       document.body.removeChild(link);
     }
+  }
+}
+
+function tableResolve(event) {
+  const index = $(event).data("index");
+  const data = chartInfos[index];
+  console.log(data);
+  if (!data.resolved) {
+    if (data.code == "codeRed")
+      $(event)
+        .removeClass("tableUnresolvedRed")
+        .addClass("tableResolvedRed");
+    else if (data.code == "codeOrange")
+      $(event)
+        .removeClass("tableUnresolvedOrange")
+        .addClass("tableResolveddOrange");
+    else if (data.code == "codeGreen") return;
+    if (running) {
+      data.happendAt = new Date();
+      resolvedArray.push(data);
+    } else
+      for (i = 0; i < historicalData.length; i++) {
+        if (historicalData[i].name == data.name) {
+          for (y = 0; y < historicalData[i].progress.length; y++) {
+            const progress = historicalData[i].progress[y];
+            if (
+              progress.qnLabel == data.qnLabel &&
+              progress.happendAt == data.happendAt
+            )
+              progress.resolved = true;
+          }
+          break;
+        }
+      }
   }
 }

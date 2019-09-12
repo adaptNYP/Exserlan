@@ -98,57 +98,38 @@ console.log(chartData);
 
 chartInfo.data = [1, 2, 3, 4];
 chartInfo.backgroundColor = ["Green", "Yellow", "Red", "Orange"];
-////////////////////////////////////////////
 
-// var barChartData = {
-//   labels: ["January", "February", "March", "April", "May", "June", "July"],
-//   datasets: [{
-//       label: 'Dataset 1',
-//       backgroundColor: window.chartColors.red,
-//       stack: 'Stack 0',
-//       data: [
-//           randomScalingFactor(),
-//           randomScalingFactor(),
-//           randomScalingFactor(),
-//           randomScalingFactor(),
-//           randomScalingFactor(),
-//           randomScalingFactor(),
-//           randomScalingFactor()
-//       ]
-//   }, {
-//       label: 'Dataset 2',
-//       backgroundColor: window.chartColors.blue,
-//       stack: 'Stack 0',
-//       data: [
-//           randomScalingFactor(),
-//           randomScalingFactor(),
-//           randomScalingFactor(),
-//           randomScalingFactor(),
-//           randomScalingFactor(),
-//           randomScalingFactor(),
-//           randomScalingFactor()
-//       ]
-//   }, {
-//       label: 'Dataset 3',
-//       backgroundColor: window.chartColors.green,
-//       stack: 'Stack 1',
-//       data: [
-//           randomScalingFactor(),
-//           randomScalingFactor(),
-//           randomScalingFactor(),
-//           randomScalingFactor(),
-//           randomScalingFactor(),
-//           randomScalingFactor(),
-//           randomScalingFactor()
-//       ]
-//   }]
-///////////////////////////////////////////
-chartInfo.labels = ["A", "B", "C", "D"];
-var ctx = document.getElementById("myChart").getContext("2d");
+var asd = document.getElementById("favorite-colors");
+var as = new Chart(asd, {
+  type: "line",
+  data: {
+    labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
+    datasets: [
+      {
+        label: "Votes",
+        data: [12, 19, 3, 5, 2, 5]
+      }
+    ]
+  },
+  options: {
+    maintainAspectRatio: false
+  }
+});
+
+chartInfo.labels = ["A", "B", "C", "B", "C", "B", "C", "B", "C"];
+var ctx = document.getElementById("myChart");
 var myChart = new Chart(ctx, {
   type: "horizontalBar", //horizontalBar
   data: {
-    labels: chartInfo.labels,
+    labels: chartInfo.labels.map(value => [value, "3ur"]),
+    // labels: {
+    //   render: function(args) {
+    //     if (args.value != 0) return +parseFloat(args.value).toFixed(2) + "hrs";
+    //   },
+    //   fontStyle: "bold",
+    //   fontColor: "black",
+    //   position: "outside"
+    // },
     datasets: [
       // {
       //   label: "# of Answer",
@@ -159,7 +140,7 @@ var myChart = new Chart(ctx, {
       // },
       {
         label: "Dataset 1",
-        backgroundColor: ["orange","red","green",'grey'],
+        backgroundColor: ["orange", "red", "green", "grey"],
         stack: "Stack 0",
         data: [1, 2, 3, 1]
       },
@@ -171,14 +152,15 @@ var myChart = new Chart(ctx, {
       },
       {
         label: "Dataset 3",
-        backgroundColor:"green",
+        backgroundColor: "green",
         stack: "Stack 0",
         data: [1, 2, 3, 0]
       }
     ]
   },
+
   options: {
-    responsive: false,
+    // responsive: false,
     maintainAspectRatio: false,
     animation: {
       duration: 1,
@@ -201,9 +183,8 @@ var myChart = new Chart(ctx, {
         });
       }
     },
-    maintainAspectRatio: false,
     scales: {
-      yAxes: [{ stacked: true }],
+      yAxes: [{ stacked: true}],
       xAxes: [
         {
           stacked: true,
@@ -216,6 +197,9 @@ var myChart = new Chart(ctx, {
     }
   }
 });
+// document.getElementById("myChart").height = 500;
+// myChart.canvas.parentNode.style.height = '2048px';
+// myChart.canvas.parentNode.style.width = '1024px';
 // myChart.data.datasets.forEach(dataset => {
 //   dataset.data = 1;
 // });

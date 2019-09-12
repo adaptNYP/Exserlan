@@ -27,7 +27,8 @@ footer {
 }
 
 .row {
-  margin-bottom: 10px;
+  margin-bottom: 5px;
+  margin-top: 5px;
 }
 
 .progressCell {
@@ -205,4 +206,40 @@ footer {
 
 .breakword {
   word-wrap: break-word;
+  text-align: center;
+}
+
+.chartHeight {
+  height: 500px;
+}
+
+hr {
+  margin-top: 0rem;
+  margin-bottom: 0rem;
+}
+
+.tableCenter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tableGreen {
+  background-color: green;
+}
+
+.tableUnresolvedRed {
+  background-color: red;
+}
+
+.tableResolvedRed {
+  border: 2px solid red;
+}
+
+.tableUnresolvedOrange {
+  background-color: Orange;
+}
+
+.tableResolvedOrange {
+  border: 2px solid Orange;
 }
