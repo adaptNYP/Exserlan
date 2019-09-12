@@ -91,23 +91,89 @@ let chartInfo = {
   ]
 };
 console.log(chartData);
-chartInfo.labels = chartData.map(({ QnLabel }) => QnLabel);
-chartInfo.data = chartData.map(({ data }) => data.length);
-chartInfo.backgroundColor = chartInfo.labels.map(() => random_bg_color());
-chartInfo.borderColor = chartInfo.labels.map(() => random_bg_color());
+// chartInfo.labels = chartData.map(({ QnLabel }) => QnLabel);
+// chartInfo.data = chartData.map(({ data }) => data.length);
+// chartInfo.backgroundColor = chartInfo.labels.map(() => random_bg_color());
+// chartInfo.borderColor = chartInfo.labels.map(() => random_bg_color());
 
+chartInfo.data = [1, 2, 3, 4];
+chartInfo.backgroundColor = ["Green", "Yellow", "Red", "Orange"];
+////////////////////////////////////////////
+
+// var barChartData = {
+//   labels: ["January", "February", "March", "April", "May", "June", "July"],
+//   datasets: [{
+//       label: 'Dataset 1',
+//       backgroundColor: window.chartColors.red,
+//       stack: 'Stack 0',
+//       data: [
+//           randomScalingFactor(),
+//           randomScalingFactor(),
+//           randomScalingFactor(),
+//           randomScalingFactor(),
+//           randomScalingFactor(),
+//           randomScalingFactor(),
+//           randomScalingFactor()
+//       ]
+//   }, {
+//       label: 'Dataset 2',
+//       backgroundColor: window.chartColors.blue,
+//       stack: 'Stack 0',
+//       data: [
+//           randomScalingFactor(),
+//           randomScalingFactor(),
+//           randomScalingFactor(),
+//           randomScalingFactor(),
+//           randomScalingFactor(),
+//           randomScalingFactor(),
+//           randomScalingFactor()
+//       ]
+//   }, {
+//       label: 'Dataset 3',
+//       backgroundColor: window.chartColors.green,
+//       stack: 'Stack 1',
+//       data: [
+//           randomScalingFactor(),
+//           randomScalingFactor(),
+//           randomScalingFactor(),
+//           randomScalingFactor(),
+//           randomScalingFactor(),
+//           randomScalingFactor(),
+//           randomScalingFactor()
+//       ]
+//   }]
+///////////////////////////////////////////
+chartInfo.labels = ["A", "B", "C", "D"];
 var ctx = document.getElementById("myChart").getContext("2d");
 var myChart = new Chart(ctx, {
-  type: "horizontalBar",
+  type: "horizontalBar", //horizontalBar
   data: {
     labels: chartInfo.labels,
     datasets: [
+      // {
+      //   label: "# of Answer",
+      //   data: chartInfo.data,
+      //   backgroundColor: chartInfo.backgroundColor,
+      //   borderColor: chartInfo.borderColor,
+      //   borderWidth: 1
+      // },
       {
-        label: "# of Answer",
-        data: chartInfo.data,
-        backgroundColor: chartInfo.backgroundColor,
-        borderColor: chartInfo.borderColor,
-        borderWidth: 1
+        label: "Dataset 1",
+        backgroundColor: ["orange","red","green",'grey'],
+        stack: "Stack 0",
+        data: [1, 2, 3, 1]
+      },
+      {
+        label: "Dataset 2",
+        backgroundColor: "blue",
+        stack: "Stack 0",
+        data: [1, 2, 3, 0]
+      },
+      {
+        label: "Dataset 3",
+        backgroundColor:"green",
+        stack: "Stack 0",
+        data: [1, 2, 3, 0]
       }
     ]
   },
@@ -137,8 +203,10 @@ var myChart = new Chart(ctx, {
     },
     maintainAspectRatio: false,
     scales: {
+      yAxes: [{ stacked: true }],
       xAxes: [
         {
+          stacked: true,
           ticks: {
             beginAtZero: true,
             stepSize: 1

@@ -89,6 +89,7 @@ function worker() {
 
     // remove after testing
     dbID = "89c190aa-9d8b-4d34-af41-61f602d54a9b";
+    // dbID = "2d109f03-72d2-4cd1-bcd2-e5e028c06ca9";
     dbaccessKey = "4d09c11a98484a91b9182b2f6bff76c9";
 
     $.ajax({
@@ -117,6 +118,7 @@ function worker() {
       complete: () => {
         // Schedule the next request when the current one's complete
         console.log("Retrieved from database");
+        console.log(autoRefresh);
         if (autoRefresh) timer = setTimeout(worker, TIMER_PERIOD); //Calls only once
       }
     });
@@ -220,21 +222,23 @@ function dataArrayToNames(array, time = endTime) {
 function dataArrayToQnLabel(array, time = endTime) {
   let newData = [...new Set(array.map(({ QnLabel }) => QnLabel))].map(
     QnLabel => {
-      return { QnLabel, data: [] };
+      return { QnLabel, data: [], type: "" }; //MCQ & Free response/MCQ Traffic light(Code no answer)/Milestones(No Code no Answer)
     }
   );
   newData.map(value => {
     value.data = array.filter(
-      ({ QnLabel, HappendAt, Answer }) =>
-        value.QnLabel == QnLabel && HappendAt <= time && Answer
+      ({ QnLabel, HappendAt }) => value.QnLabel == QnLabel && HappendAt <= time
     );
     value.data = [...new Set(value.data.map(({ Name }) => Name))].map(Name =>
       value.data.find(s => s.Name == Name)
     );
+    if (!value.data.find(s => s.Code)) value.type = "MS";
+    else if (!value.data.find(s => s.Answer)) value.type = "TL";
   });
   newData.sort((a, b) => {
     return a.QnLabel < b.QnLabel ? -1 : b.QnLabel < a.QnLabel ? 1 : 0;
   });
+  console.log(newData);
   return newData;
 }
 
@@ -339,9 +343,9 @@ const myChart = new Chart(ctx, {
   type: "horizontalBar",
   data: {},
   options: {
-    legend: {
-      display: false
-    },
+    // legend: {
+    //   display: false
+    // },
     aspectRatio: 1,
     responsive: false,
     maintainAspectRatio: false,
@@ -371,11 +375,13 @@ const myChart = new Chart(ctx, {
     scales: {
       yAxes: [
         {
-          barPercentage: 1
+          barPercentage: 1,
+          stacked: true
         }
       ],
       xAxes: [
         {
+          stacked: true,
           ticks: {
             beginAtZero: true,
             stepSize: 1
@@ -480,21 +486,76 @@ function refreshChartInfo() {
 
 function chartView(chartData) {
   chartData = chartData.filter(value => value.data.length != 0);
-  const labels = chartData.map(({ QnLabel }) => QnLabel);
-  const labelColors = labels.map(QnLabel => getLabelColor(QnLabel));
+  let green = [],
+    orange = [],
+    red = [],
+    grey = [],
+    codeGreen = [],
+    codeOrange = [],
+    codeRed = [];
+
+  chartData.forEach(({ data, type }) => {
+    if (type == "MS") {
+      green.push(0),
+        red.push(0),
+        grey.push(data.length),
+        codeGreen.push(0),
+        codeOrange.push(0),
+        codeRed.push(0);
+    } else {
+      green.push(
+        data.filter(({ Code, Answer }) => Code == "codeGreen" && Answer).length
+      );
+      red.push(
+        data.filter(({ Code, Answer }) => Code == "codeRed" && Answer).length
+      );
+      grey.push(0);
+      codeGreen.push(
+        data.filter(({ Code, Answer }) => Code == "codeOrange" && !Answer)
+          .length
+      );
+      codeOrange.push(data.filter(({ Code }) => Code == "codeOrange").length);
+      codeRed.push(
+        data.filter(({ Code, Answer }) => Code == "codeRed" && !Answer).length
+      );
+    }
+  });
   myChart.data = {
-    labels,
+    labels: chartData.map(({ QnLabel }) => QnLabel),
     datasets: [
       {
-        data: chartData.map(({ data }) => data.length),
-        backgroundColor: labelColors,
-        borderColor: labelColors,
-        borderWidth: 1
+        label: "Correct",
+        backgroundColor: "green",
+        data: green
+      },
+      {
+        label: "Wrong",
+        backgroundColor: "red",
+        data: red
+      },
+      {
+        label: "CodeGreen",
+        backgroundColor: "#77dd77",
+        data: codeGreen
+      },
+      {
+        label: "CodeOrange",
+        backgroundColor: "#ffb347",
+        data: codeOrange
+      },
+      {
+        label: "CodeRed ",
+        backgroundColor: "#ff6961",
+        data: codeRed
+      },
+      {
+        label: "Milestone",
+        backgroundColor: "grey",
+        data: grey
       }
     ]
   };
   myChart.update();
-  // myChart.resize();
 }
 
 function getLabelColor(QnLabel) {
@@ -602,7 +663,7 @@ function pieChartToggle() {
     const piectx = document.getElementById("piechart").getContext("2d");
 
     const uniqueanswer = [...new Set(chartInfos.map(({ answer }) => answer))];
-    console.log(uniqueanswer)
+    console.log(uniqueanswer);
     let answers = uniqueanswer
       .map(uniqueanswer => {
         return {
@@ -733,4 +794,68 @@ function exportToJsonFile() {
   linkElement.setAttribute("href", dataUri);
   linkElement.setAttribute("download", exportFileDefaultName);
   linkElement.click();
+}
+
+function exportToCSV() {
+  const changedData = currentData.map(value => {
+    return {
+      Name: value.Name,
+      QnLabel: value.QnLabel,
+      Answer: value.Answer ? value.Answer : "",
+      Code: value.Code ? value.Code : "",
+      HappendAt: value.HappendAt
+    };
+  });
+  const headers = {
+    Name: "Name",
+    QnLabel: "QnLabel",
+    Answer: "Answer",
+    Code: "Code",
+    HappendAt: "HappendAt"
+  };
+
+  if (headers) {
+    changedData.unshift(headers);
+  }
+  var jsonObject = JSON.stringify(changedData);
+
+  var csv = (jsonObject => {
+    var array =
+      typeof jsonObject != "object" ? JSON.parse(jsonObject) : jsonObject;
+    var str = "";
+
+    for (var i = 0; i < array.length; i++) {
+      var line = "";
+      for (var index in array[i]) {
+        if (line != "") line += ",";
+
+        line += array[i][index];
+      }
+
+      str += line + "\r\n";
+    }
+
+    return str;
+  })(jsonObject);
+
+  var exportedFilenmae = "coursedata  " + ".csv" || "export.csv";
+
+  var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  if (navigator.msSaveBlob) {
+    // IE 10+
+    navigator.msSaveBlob(blob, exportedFilenmae);
+  } else {
+    var link = document.createElement("a");
+    if (link.download !== undefined) {
+      // feature detection
+      // Browsers that support HTML5 download attribute
+      var url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", exportedFilenmae);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
 }
