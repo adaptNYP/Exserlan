@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>METSAN: Resolutionary Lecturer Portal</title>
+
+    <!-- Jquery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Bootstrap core CSS -->
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Chart JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" rel="stylesheet" />
+
+    <!-- Custom styles for this template -->
+    <link href="css/metsan.css" rel="stylesheet">
+
+    <!-- Custom JS -->
+    <script src="JS/newMain.js" async></script>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">METSAN - Tutor view</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="jumbotron my-4">
+            <!-- Starting page -->
+            <div class="firstPage">
+                <h1 class="display-6">Welcome to METSAN</h1>
+                <p class="lead">
+                    This is the tutor view for the
+                    <span style="font-weight: bold; color: blue">
+                        METSAN (Mobile Enhanced Tutoring for Skill AcquisitioN)
+                    </span>
+                    app.
+                </p>
+                <p>
+                    Input your surveyJS database id and access keyinto the fields below, click "Start", and you are good
+                    to go!
+                </p>
+                <div>
+                    <!-- <input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc" placeholder="dbID">
+                    <input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc" placeholder="accessKey"> -->
+                    <input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc" placeholder="dbID"
+                        value="89c190aa-9d8b-4d34-af41-61f602d54a9b">
+                    <input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc"
+                        value="4d09c11a98484a91b9182b2f6bff76c9" placeholder="accessKey">
+                    <button class="btn btn-primary btn-sm" id="startButton">Start</button>
+                </div>
+                <div id="firstLoading" style="display: none">Loading...</div>
+            </div>
+
+            <!-- Running Page -->
+            <div id="runningPage" style="display: none;">
+
+            </div>
+        </div>
+
+        <!-- dbID and accessKey Holder -->
+        <div class="firstPage" id="keyRowList" style="display: none">
+            <div id="firstKeyRow" class="row">
+                <div class="col-5">dbID</div>
+                <div class="col-5">dbaccessKey</div>
+                <div class="col-2 nopadding" style="display: flex">
+                    <button class="btn btn-primary btn-sm" id="clearID" style="margin: auto;">Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Footer -->
+    <footer class="py-5 bg-dark">
+        <div class="container">
+            <p class="m-0 text-center text-white">Copyright &copy; Nanyang Polytechnic 2019</p>
+        </div>
+    </footer>
+
+
+</body>
+
+</html>

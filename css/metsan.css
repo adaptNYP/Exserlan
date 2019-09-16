@@ -243,3 +243,11 @@ hr {
 .tableResolvedOrange {
   border: 2px solid Orange;
 }
+
+.wordBreak {
+  word-break: break-all;
+}
+
+.nopadding {
+  padding: 0 !important;
+}
