@@ -608,7 +608,7 @@ function sortName() {
   refreshView();
 }
 
-hideInputs = () => {
+function hideInputs() {
   $("#landingJumbo").hide();
   $("#appRunningJumbo").show();
   $("#toggleMode")
