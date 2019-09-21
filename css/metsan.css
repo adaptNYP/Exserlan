@@ -245,9 +245,31 @@ hr {
 }
 
 .wordBreak {
-  word-break: break-all;
+  white-space: nowrap;
+  overflow: auto;
+  margin: 0px;
+  height: 100%;
 }
 
 .nopadding {
   padding: 0 !important;
+}
+
+.sliderDiv {
+  padding: 0px 10px 10px 10px;
+  position: fixed;
+  display: block;
+  bottom: -1px;
+  width: 100%;
+  background: #e9ecef;
+}
+
+.sliderDiv > p {
+  justify-content: space-evenly;
+  display: flex;
+  margin: 0;
+}
+
+.runningPage {
+  display: none;
 }

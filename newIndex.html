@@ -61,13 +61,21 @@
                     <input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc"
                         value="4d09c11a98484a91b9182b2f6bff76c9" placeholder="accessKey">
                     <button class="btn btn-primary btn-sm" id="startButton">Start</button>
+                    <button class="btn btn-primary btn-sm" id="clearButton">Clear</button>
                 </div>
-                <div id="firstLoading" style="display: none">Loading...</div>
+                <div id="firstLoading" style="display: none">Loading, Please wait while we retrieve your data...</div>
             </div>
 
             <!-- Running Page -->
-            <div id="runningPage" style="display: none;">
-
+            <div class="runningPage">
+                <p class="lead" style="font-weight: bold; color: red; justify-content: space-between; display: flex;">
+                    METSAN Is Running
+                    <button id="stopButton" class="btn btn-warning btn-sm">Stop</button>
+                </p>
+                <div>
+                    Select Date:
+                    <select id="dateSelection" onchange="changeDate(this)"></select>
+                </div>
             </div>
         </div>
 
@@ -83,6 +91,18 @@
         </div>
     </div>
 
+    <!-- Slider -->
+    <div class="runningPage sliderDiv">
+        <p>
+            <span>
+                Time:<span id="sliderOutput"></span>
+            </span>
+            <span>
+                Current Time:<span id="now"></span>
+            </span>
+        </p>
+        <input type="range" class="slider" id="myRange">
+    </div>
 
     <!-- Footer -->
     <footer class="py-5 bg-dark">
