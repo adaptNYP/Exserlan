@@ -200,8 +200,9 @@ const data = new (class {
     let d = (this.sortedData = this.ajaxData.concat());
     d.map(value => {
       let date = new Date(value.HappendAt);
-      if (date.getHours() >= 16) date.setHours(date.getHours() - 16);
-      else date.setHours(date.getHours() + 8);
+      if (date.getHours() >= 16)
+        date = new Date(date.getTime() - 16 * 3600000);
+      else date = new Date(date.getTime() + 8 * 3600000);
       return (value.HappendAt = date);
     });
     d.sort((a, b) => new Date(b.HappendAt) - new Date(a.HappendAt));
