@@ -8,6 +8,7 @@ let refreshInterval = null;
 let currentTimeInterval;
 let lockCurrentTime = false; //Slider val will go with current time
 let changeDateVariable = false;
+let incomingNewData = true;
 
 var dbID = $("#surveyJSDBid").val();
 var dbaccessKey = $("#surveyJSDBaccessKey").val();
@@ -43,7 +44,10 @@ $("#clearButton").click(() => {
   $("#surveyJSDBaccessKey").val("");
 });
 
-$("#stopButton").click(() => clearInterval(refreshInterval));
+$("#stopButton").click(() => {
+  clearInterval(refreshInterval);
+  refreshInterval = null;
+});
 
 slider.oninput = function() {
   $("#sliderOutput").html(dt.formatTime(this.value));
@@ -144,11 +148,15 @@ function runRefeshInterval() {
       .getData(dbID, dbaccessKey)
       .then(({ length }) => {
         refreshLimit.restart();
-        if (oldDataLength != length) runningRefresh(); //There's new Data
+        if (oldDataLength != length) {
+          incomingNewData = true;
+          runningRefresh();
+        } //There's new Data
       })
       .catch(() => refreshLimit.limit--);
     if (refreshLimit == 0) {
       clearInterval(refreshInterval);
+      refreshInterval = null;
       alert("Refesh limit hit, error with connection");
       $(".firstPage").show();
     }
@@ -224,17 +232,17 @@ const data = new (class {
 
     //Get latest time
     this.dayEndTime = this.dayData[0].HappendAt;
-
     if (dt.dateToDateString(date) == todayDate) {
-      useCurrentTime = true;
+      useCurrentTime = $("#currentB").text() == "False" ? false : true;
       $("#current").show();
-      if (!refreshInterval) runRefeshInterval();
+      if (!refreshInterval && !incomingNewData) runRefeshInterval();
     } else {
       useCurrentTime = false;
       clearInterval(refreshInterval);
       refreshInterval = null;
       $("#current").hide();
     }
+    incomingNewData = false;
     this.setUp();
   }
 
@@ -255,9 +263,11 @@ const data = new (class {
       $("#sliderOutput").html(maxString);
 
     //Check if use current time
-    if (useCurrentTime && !currentTimeInterval) this.runCurrentInterval();
-    else {
+    if (useCurrentTime) {
+      if (!currentTimeInterval) this.runCurrentInterval();
+    } else {
       clearInterval(currentTimeInterval);
+      currentTimeInterval = null;
       $("#now").hide();
       $(slider).attr("max", maxValue);
       if (changeDateVariable) {
@@ -269,7 +279,7 @@ const data = new (class {
     }
   }
   runCurrentInterval() {
-    $("#now").show()
+    $("#now").show();
     $("#holding").show();
     let holdingMode = null;
     let timeInterval = 0;
