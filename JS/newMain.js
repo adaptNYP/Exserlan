@@ -200,8 +200,7 @@ const data = new (class {
     let d = (this.sortedData = this.ajaxData.concat());
     d.map(value => {
       let date = new Date(value.HappendAt);
-      if (date.getHours() >= 16)
-        date = new Date(date.getTime() - 16 * 3600000);
+      if (date.getHours() >= 16) date = new Date(date.getTime() - 16 * 3600000);
       else date = new Date(date.getTime() + 8 * 3600000);
       return (value.HappendAt = date);
     });
@@ -231,6 +230,7 @@ const data = new (class {
     if (this.dayData.length == 0) {
       $(".sliderDiv").hide();
       $("#studentsProgress").html("<p>No Data for this date</p>");
+      if (!refreshInterval && !incomingNewData) runRefeshInterval();
       return;
     } else $(".sliderDiv").show();
 
@@ -282,32 +282,41 @@ const data = new (class {
       } else this.dataNewTime(dt.secondsToDate($(slider).val()));
     }
   }
+  holdingMode = null;
+  timeInterval = 0;
   runCurrentInterval() {
     $("#now").show();
     $("#holding").show();
-    let holdingMode = null;
-    let timeInterval = 0;
+    this.holdingMode = null;
+    this.timeInterval = 0;
+    this.currentInterval();
+  }
+  currentInterval() {
     currentTimeInterval = setInterval(() => {
       const currentTime = new Date();
       const currentSeconds = dt.dateToSeconds(currentTime);
       slider.setAttribute("max", currentSeconds);
       $("#now").html(dt.dateToTimeString(currentTime));
-      if (holdingMode == null) timeInterval = 2000;
+      if (this.holdingMode == null) {
+        clearInterval(currentTimeInterval);
+        this.timeInterval = 2000;
+        this.currentInterval();
+      }
       if (
         parseInt($(slider).val()) + 3 >= currentSeconds ||
-        holdingMode == null
+        this.holdingMode == null
       ) {
-        holdingMode = true;
+        this.holdingMode = true;
         $("#holding").text("(Lock)");
         $(slider).val(currentSeconds);
         $("#sliderOutput").html(dt.dateToTimeString(currentTime));
         this.dataNewTime(currentTime);
       } else {
         $("#holding").text("(Free)");
-        holdingMode = false;
+        this.holdingMode = false;
         this.dataNewTime(dt.secondsToDate(parseInt($(slider).val())));
       }
-    }, timeInterval);
+    }, this.timeInterval);
   }
 
   dataNewTime(date) {
