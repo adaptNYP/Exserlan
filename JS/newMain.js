@@ -8,7 +8,6 @@ let refreshInterval = null;
 let currentTimeInterval;
 let lockCurrentTime = false; //Slider val will go with current time
 let changeDateVariable = false;
-let currentDay = true;
 
 var dbID = $("#surveyJSDBid").val();
 var dbaccessKey = $("#surveyJSDBaccessKey").val();
@@ -86,6 +85,7 @@ function toggleCurrent() {
     $("#currentB").html("False");
     clearInterval(currentTimeInterval);
     currentTimeInterval = null;
+    $("#holding").hide();
     data.setUp();
   } else {
     useCurrentTime = true;
@@ -164,7 +164,7 @@ function runningRefresh() {
 function changeDate(evt) {
   $(slider).val(50);
   changeDateVariable = true;
-  data.setDate(evt.options[evt.selectedIndex].text);
+  data.setDate(new Date(evt.options[evt.selectedIndex].text));
 }
 
 const data = new (class {
@@ -188,6 +188,7 @@ const data = new (class {
     });
   }
   mainSort() {
+    changeDateVariable = true;
     let d = (this.sortedData = this.ajaxData.concat());
     d.map(value => {
       let date = new Date(value.HappendAt);
@@ -223,14 +224,15 @@ const data = new (class {
 
     //Get latest time
     this.dayEndTime = this.dayData[0].HappendAt;
+
     if (dt.dateToDateString(date) == todayDate) {
-      currentDay = true;
-      $("#currentB").prop("disabled", false);
+      useCurrentTime = true;
+      $("#current").show();
       if (!refreshInterval) runRefeshInterval();
     } else {
-      currentDay = false;
       useCurrentTime = false;
       clearInterval(refreshInterval);
+      refreshInterval = null;
       $("#current").hide();
     }
     this.setUp();
@@ -240,43 +242,58 @@ const data = new (class {
   setUp() {
     const earliestTime = this.dayData[this.dayData.length - 1].HappendAt;
     const minValue = dt.dateToSeconds(earliestTime);
-    slider.setAttribute("min", minValue);
+    const maxValue = dt.dateToSeconds(this.dayEndTime);
+    const maxString = dt.dateToString(this.dayEndTime);
+    $(slider).attr("min", minValue);
 
     //Testing
     $("#startTime").text(dt.dateToString(earliestTime));
-    $("#endTime").text(dt.dateToString(this.dayEndTime));
+    $("#endTime").text(maxString);
 
     //If there is a change of date/html is not set
     if ($("#sliderOutput").html() == "" || changeDateVariable)
-      $("#sliderOutput").html(dt.dateToString(this.dayEndTime));
+      $("#sliderOutput").html(maxString);
 
     //Check if use current time
     if (useCurrentTime) this.runCurrentInterval();
     else {
+      clearInterval(currentTimeInterval);
       $("#nowBox").hide();
-      $("#sliderOutput").html(dt.dateToString(this.dayEndTime));
-      slider.setAttribute("max", dt.dateToSeconds(this.dayEndTime));
-      if ($(slider).val() == minValue || changeDateVariable) {
+      $(slider).attr("max", maxValue);
+      if (changeDateVariable) {
         changeDateVariable = false;
-        $(slider).val(dt.dateToSeconds(this.dayEndTime));
+        $(slider).val(maxValue);
+        $("#sliderOutput").html(maxString);
         this.dataNewTime(this.dayEndTime);
       } else this.dataNewTime(dt.secondsToDate($(slider).val()));
     }
   }
   runCurrentInterval() {
-    let holderTime;
     $("#nowBox").show();
+    $("#holding").show();
+    let holdingMode = null;
+    let timeInterval = 0;
     currentTimeInterval = setInterval(() => {
       const currentTime = new Date();
       const currentSeconds = dt.dateToSeconds(currentTime);
       slider.setAttribute("max", currentSeconds);
       $("#now").html(dt.dateToString(currentTime));
-      if (parseInt($(slider).val()) + 3 >= holderTime || !holderTime) {
-        $(slider).val((holderTime = currentSeconds));
+      if (holdingMode == null) timeInterval = 2000;
+      if (
+        parseInt($(slider).val()) + 3 >= currentSeconds ||
+        holdingMode == null
+      ) {
+        holdingMode = true;
+        $("#holding").text("(Lock)");
+        $(slider).val(currentSeconds);
         $("#sliderOutput").html(dt.dateToString(currentTime));
         this.dataNewTime(currentTime);
+      } else {
+        $("#holding").text("(Free)");
+        holdingMode = false;
+        this.dataNewTime(dt.secondsToDate(parseInt($(slider).val())));
       }
-    }, 2000);
+    }, timeInterval);
   }
 
   dataNewTime(date) {
@@ -362,7 +379,7 @@ const dt = new (class {
     return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
   }
   dateToDateString(date) {
-    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
   }
   formatTime(s) {
     let seconds = s % 60;
