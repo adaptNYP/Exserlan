@@ -227,8 +227,11 @@ const data = new (class {
     this.dayData = this.arrayToDate(this.sortedData, date);
 
     //If selected date doesn't have data, only applicable for today's date
-    if (this.dayData.length == 0)
-      return $("#studentsProgress").text("No Data for this date");
+    if (this.dayData.length == 0) {
+      $(".sliderDiv").hide();
+      $("#studentsProgress").html("<p>No Data for this date</p>");
+      return;
+    } else $(".sliderDiv").show();
 
     //Get latest time
     this.dayEndTime = this.dayData[0].HappendAt;
