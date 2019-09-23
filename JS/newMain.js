@@ -1,7 +1,6 @@
 const LSK = "keys"; //Local Storage Key
 const REFRESH_DATA_RATE = 1000; // 1s
 const REFRESH_DEFAULT_LIMIT = 2;
-const todayDate = dt.dateToDateString(new Date());
 
 var DOUBLECLICK_DELAY = 300; //300 Milliseconds, 0.3 seconds
 let useCurrentTime = true; //Max time is current time, only valid if date is same
@@ -213,8 +212,14 @@ const data = new (class {
   }
   //Activate when change date
   setDate(date) {
+    console.log(this.sortedData);
     this.dayData = this.arrayToDate(this.sortedData, new Date(date));
-
+    
+    if (this.dayData.length == 0) {
+      $("#studentsProgress").text("No Data for this date");
+      return;
+    }
+    console.log(this.dayData);
     this.dayEndTime = this.dayData[0].HappendAt;
     if (date == todayDate) {
       currentDay = true;
@@ -280,7 +285,7 @@ const data = new (class {
     return a.filter(
       ({ HappendAt }) =>
         HappendAt.getFullYear() == date.getFullYear() &&
-        HappendAt.getMonth() == date.getMonth() + 1 &&
+        HappendAt.getMonth() == date.getMonth() &&
         HappendAt.getDate() == date.getDate()
     );
   }
@@ -465,6 +470,8 @@ function resolveAlert(e) {
     thisStudentProgress[indexProg].resolved = 1;
   }
 }
+
+const todayDate = dt.dateToDateString(new Date());
 
 //Testing
 $("#startButton").click();
