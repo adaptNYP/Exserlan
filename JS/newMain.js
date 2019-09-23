@@ -212,14 +212,13 @@ const data = new (class {
   }
   //Activate when change date
   setDate(date) {
-    console.log(this.sortedData);
     this.dayData = this.arrayToDate(this.sortedData, new Date(date));
-    
-    if (this.dayData.length == 0) {
-      $("#studentsProgress").text("No Data for this date");
-      return;
-    }
-    console.log(this.dayData);
+
+    //If selected date doesn't have data, only applicable for today's date
+    if (this.dayData.length == 0)
+      return $("#studentsProgress").text("No Data for this date");
+
+    //Get latest time
     this.dayEndTime = this.dayData[0].HappendAt;
     if (date == todayDate) {
       currentDay = true;
