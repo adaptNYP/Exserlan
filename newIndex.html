@@ -74,13 +74,17 @@
                     METSAN Is Running
                     <button id="stopButton" class="btn btn-warning btn-sm">Stop</button>
                 </p>
-                <div style="align-items: center; justify-content: space-between; display: flex;">
-                    <div>
-                        Select Date:
+                <div class="row">
+                    <div class="col-6">
+                        <div>
+                            Select Date:
+                        </div>
                         <select id="dateSelection" onchange="changeDate(this)"></select>
                     </div>
-                    <div id="current">
-                        Current:
+                    <div id="current" class="col-6">
+                        <div>
+                            Use Current Time:
+                        </div>
                         <button id="currentB" class="btn btn-primary btn-sm" onclick="toggleCurrent()">True</button>
                     </div>
                 </div>
@@ -129,18 +133,18 @@
                 Time:
                 <span id="sliderOutput"></span>
             </span>
-            <span id="nowBox">
+            <span id="nowBox" style="display: none">
                 Current:
                 <span id="now"></span>
             </span>
         </p>
         <p>
             <span>
-                Start:
+                Earlist Data:
                 <span id="startTime"></span>
             </span>
             <span>
-                End:
+                Latest Data:
                 <span id="endTime"></span>
             </span>
         </p>

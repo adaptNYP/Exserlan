@@ -5,6 +5,7 @@ const REFRESH_DEFAULT_LIMIT = 2;
 var DOUBLECLICK_DELAY = 300; //300 Milliseconds, 0.3 seconds
 let useCurrentTime = true; //Max time is current time, only valid if date is same
 let refreshInterval = null;
+let currentTimeInterval;
 let lockCurrentTime = false; //Slider val will go with current time
 let changeDateVariable = false;
 let currentDay = true;
@@ -83,12 +84,13 @@ function toggleCurrent() {
   if (useCurrentTime) {
     useCurrentTime = false;
     $("#currentB").html("False");
-    clearInterval(refreshInterval);
-    runningRefresh();
+    clearInterval(currentTimeInterval);
+    currentTimeInterval = null;
+    data.setUp();
   } else {
     useCurrentTime = true;
     $("#currentB").html("True");
-    runningRefresh();
+    if (!currentTimeInterval) data.setUp();
   }
 }
 
@@ -210,9 +212,10 @@ const data = new (class {
       this.setDate(new Date(holder));
     } else this.setDate(new Date());
   }
+
   //Activate when change date
   setDate(date) {
-    this.dayData = this.arrayToDate(this.sortedData, new Date(date));
+    this.dayData = this.arrayToDate(this.sortedData, date);
 
     //If selected date doesn't have data, only applicable for today's date
     if (this.dayData.length == 0)
@@ -220,7 +223,7 @@ const data = new (class {
 
     //Get latest time
     this.dayEndTime = this.dayData[0].HappendAt;
-    if (date == todayDate) {
+    if (dt.dateToDateString(date) == todayDate) {
       currentDay = true;
       $("#currentB").prop("disabled", false);
       if (!refreshInterval) runRefeshInterval();
@@ -232,12 +235,13 @@ const data = new (class {
     }
     this.setUp();
   }
+
   //Activate with useCurrentTime button
   setUp() {
-    const d = this.dayData;
-    const earliestTime = d[d.length - 1].HappendAt;
+    const earliestTime = this.dayData[this.dayData.length - 1].HappendAt;
     const minValue = dt.dateToSeconds(earliestTime);
     slider.setAttribute("min", minValue);
+
     //Testing
     $("#startTime").text(dt.dateToString(earliestTime));
     $("#endTime").text(dt.dateToString(this.dayEndTime));
@@ -247,26 +251,10 @@ const data = new (class {
       $("#sliderOutput").html(dt.dateToString(this.dayEndTime));
 
     //Check if use current time
-    if (useCurrentTime) {
-      $("#nowBox").show();
-      console.log("Looking At today's data");
-      const time = new Date();
-      $("#now").html(dt.dateToString(time));
-      console.log(lockCurrentTime);
-      if (lockCurrentTime) {
-        slider.setAttribute("max", dt.dateToSeconds(time));
-        slider.setAttribute("value", dt.dateToSeconds(time));
-        $("#sliderOutput").html(dt.dateToString(time));
-        this.dataNewTime(time);
-      } else {
-        slider.setAttribute("value", dt.dateToSeconds(this.dayEndTime));
-        $("#sliderOutput").html(dt.dateToString(this.dayEndTime));
-        this.dataNewTime(this.dayEndTime);
-      }
-    } else {
+    if (useCurrentTime) this.runCurrentInterval();
+    else {
       $("#nowBox").hide();
-      console.log("Looking At old data");
-      $("#now").html(dt.dateToString(this.dayEndTime));
+      $("#sliderOutput").html(dt.dateToString(this.dayEndTime));
       slider.setAttribute("max", dt.dateToSeconds(this.dayEndTime));
       if ($(slider).val() == minValue || changeDateVariable) {
         changeDateVariable = false;
@@ -275,6 +263,22 @@ const data = new (class {
       } else this.dataNewTime(dt.secondsToDate($(slider).val()));
     }
   }
+  runCurrentInterval() {
+    let holderTime;
+    $("#nowBox").show();
+    currentTimeInterval = setInterval(() => {
+      const currentTime = new Date();
+      const currentSeconds = dt.dateToSeconds(currentTime);
+      slider.setAttribute("max", currentSeconds);
+      $("#now").html(dt.dateToString(currentTime));
+      if (parseInt($(slider).val()) + 3 >= holderTime || !holderTime) {
+        $(slider).val((holderTime = currentSeconds));
+        $("#sliderOutput").html(dt.dateToString(currentTime));
+        this.dataNewTime(currentTime);
+      }
+    }, 2000);
+  }
+
   dataNewTime(date) {
     this.nameArray = this.arrayByNames(this.dayData, date);
     jasonView(this.nameArray);
