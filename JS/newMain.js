@@ -243,11 +243,11 @@ const data = new (class {
     const earliestTime = this.dayData[this.dayData.length - 1].HappendAt;
     const minValue = dt.dateToSeconds(earliestTime);
     const maxValue = dt.dateToSeconds(this.dayEndTime);
-    const maxString = dt.dateToString(this.dayEndTime);
+    const maxString = dt.dateToTimeString(this.dayEndTime);
     $(slider).attr("min", minValue);
 
     //Testing
-    $("#startTime").text(dt.dateToString(earliestTime));
+    $("#startTime").text(dt.dateToTimeString(earliestTime));
     $("#endTime").text(maxString);
 
     //If there is a change of date/html is not set
@@ -255,7 +255,7 @@ const data = new (class {
       $("#sliderOutput").html(maxString);
 
     //Check if use current time
-    if (useCurrentTime) this.runCurrentInterval();
+    if (useCurrentTime && !currentTimeInterval) this.runCurrentInterval();
     else {
       clearInterval(currentTimeInterval);
       $("#nowBox").hide();
@@ -277,7 +277,7 @@ const data = new (class {
       const currentTime = new Date();
       const currentSeconds = dt.dateToSeconds(currentTime);
       slider.setAttribute("max", currentSeconds);
-      $("#now").html(dt.dateToString(currentTime));
+      $("#now").html(dt.dateToTimeString(currentTime));
       if (holdingMode == null) timeInterval = 2000;
       if (
         parseInt($(slider).val()) + 3 >= currentSeconds ||
@@ -286,7 +286,7 @@ const data = new (class {
         holdingMode = true;
         $("#holding").text("(Lock)");
         $(slider).val(currentSeconds);
-        $("#sliderOutput").html(dt.dateToString(currentTime));
+        $("#sliderOutput").html(dt.dateToTimeString(currentTime));
         this.dataNewTime(currentTime);
       } else {
         $("#holding").text("(Free)");
@@ -372,10 +372,7 @@ const dt = new (class {
   dateToSeconds(date = new Date()) {
     return date.getSeconds() + date.getMinutes() * 60 + date.getHours() * 3600;
   }
-  // getSeconds(seconds = 0, minutes = 0, hours = 0) {
-  //   return hours * 60 * 60 + minutes * 60 + seconds;
-  // }
-  dateToString(date) {
+  dateToTimeString(date) {
     return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
   }
   dateToDateString(date) {
@@ -386,9 +383,6 @@ const dt = new (class {
     let hours = Math.trunc(s / 60 / 60);
     let minutes = (s - hours * 60 * 60 - seconds) / 60;
     return `${hours}:${minutes}:${seconds}`;
-  }
-  formatTimeToHTML(date = new Date()) {
-    return date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
   }
   secondsToDate(s) {
     let seconds = s % 60;
@@ -477,7 +471,6 @@ function dynamicFeedback() {
 }
 
 function resolveAlert(e) {
-  console.log("asdas");
   e.preventDefault();
   if ($(this).hasClass("codeOrange") || $(this).hasClass("codeRed")) {
     // add class to change border style of cell
@@ -485,7 +478,8 @@ function resolveAlert(e) {
 
     var indexHist = this.getAttribute("data-index-hist");
     var indexProg = this.getAttribute("data-index-prog");
-
+    console.log(indexHist);
+    console.log(indexProg);
     var thisStudentProgress = data.nameArray[indexHist].progress;
     thisStudentProgress[indexProg].resolved = 1;
   }
