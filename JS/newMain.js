@@ -320,6 +320,7 @@ const data = new (class {
   }
 
   dataNewTime(date) {
+    date = new Date(date.getTime()+500) //Hacks
     this.nameArray = this.arrayByNames(this.dayData, date);
     jasonView(this.nameArray);
     this.qnLabelArray = this.arrayByQnLabel(this.dayData, date);
