@@ -1,14 +1,33 @@
+html {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
 body {
   padding-top: 56px;
+  position: relative;
+  margin: 0;
+  padding-bottom: 12rem;
+  min-height: 100%;
 }
 #retrieveFromDBbtn {
   margin-left: 10px;
 }
 
-footer {
-  margin-top: 20px;
+.footer {
+  position: absolute;
+  right: 0;
+  bottom: 0px;
+  left: 0;
+  text-align: center;
+  z-index: -1;
 }
-
 .studentName {
   word-wrap: break-word;
   /* position: absolute; */
