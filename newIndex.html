@@ -87,9 +87,10 @@
                         </div>
                         <div style="display: inline-block;">
                             <button id="currentB" class="btn btn-primary btn-sm" onclick="toggleCurrent()">True</button>
-                            <span id="holding" style="display: inline-block; vertical-align: middle; line-height: normal;">(Lock)</span>
+                            <span id="holding"
+                                style="display: inline-block; vertical-align: middle; line-height: normal;">(Lock)</span>
                         </div>
-                        
+
                     </div>
                 </div>
             </div>
@@ -132,25 +133,10 @@
 
     <!-- Slider -->
     <div class="runningPage sliderDiv">
-        <p>
-            <span>
-                Time:
-                <span id="sliderOutput"></span>
-            </span>
-            <span id="nowBox" style="display: none">
-                Current:
-                <span id="now"></span>
-            </span>
-        </p>
-        <p>
-            <span>
-                Earlist Data:
-                <span id="startTime"></span>
-            </span>
-            <span>
-                Latest Data:
-                <span id="endTime"></span>
-            </span>
+        <p style="justify-content: space-between;">
+            <span id="startTime"></span>
+            <span id="now"></span>
+            <span id="sliderOutput"></span>
         </p>
         <input type="range" class="slider" id="myRange">
     </div>

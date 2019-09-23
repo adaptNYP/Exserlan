@@ -248,7 +248,7 @@ const data = new (class {
 
     //Testing
     $("#startTime").text(dt.dateToTimeString(earliestTime));
-    $("#endTime").text(maxString);
+    // $("#endTime").text(maxString);
 
     //If there is a change of date/html is not set
     if ($("#sliderOutput").html() == "" || changeDateVariable)
@@ -258,7 +258,7 @@ const data = new (class {
     if (useCurrentTime && !currentTimeInterval) this.runCurrentInterval();
     else {
       clearInterval(currentTimeInterval);
-      $("#nowBox").hide();
+      $("#now").hide();
       $(slider).attr("max", maxValue);
       if (changeDateVariable) {
         changeDateVariable = false;
@@ -269,7 +269,7 @@ const data = new (class {
     }
   }
   runCurrentInterval() {
-    $("#nowBox").show();
+    $("#now").show()
     $("#holding").show();
     let holdingMode = null;
     let timeInterval = 0;
