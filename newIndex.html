@@ -56,8 +56,10 @@
                 <div>
                     <!-- <input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc" placeholder="dbID">
                     <input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc" placeholder="accessKey"> -->
+                    <!-- <input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc" placeholder="dbID"
+                        value="89c190aa-9d8b-4d34-af41-61f602d54a9b"> -->
                     <input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc" placeholder="dbID"
-                        value="89c190aa-9d8b-4d34-af41-61f602d54a9b">
+                        value="2d109f03-72d2-4cd1-bcd2-e5e028c06ca9">
                     <input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc"
                         value="4d09c11a98484a91b9182b2f6bff76c9" placeholder="accessKey">
                     <button class="btn btn-primary btn-sm" id="startButton">Start</button>
@@ -72,9 +74,15 @@
                     METSAN Is Running
                     <button id="stopButton" class="btn btn-warning btn-sm">Stop</button>
                 </p>
-                <div>
-                    Select Date:
-                    <select id="dateSelection" onchange="changeDate(this)"></select>
+                <div style="align-items: center; justify-content: space-between; display: flex;">
+                    <div>
+                        Select Date:
+                        <select id="dateSelection" onchange="changeDate(this)"></select>
+                    </div>
+                    <div id="current">
+                        Current:
+                        <button id="currentB" class="btn btn-primary btn-sm" onclick="toggleCurrent()">True</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -89,16 +97,51 @@
                 </div>
             </div>
         </div>
+
+        <div id="studentsProgress">
+            <p>Awaiting input...</p>
+        </div>
+    </div>
+
+    <!-- The Modal -->
+    <div id="myModal" class="modal">
+        <div class="modal-content" style="width: 92%;">
+            <div class="modal-header" style="display: block;">
+                <span class="close">&times;</span>
+                <h2>Modal Header</h2>
+            </div>
+            <div style="justify-content: space-evenly; display: flex;margin: 5px 0;">
+                <button class="btn btn-success btn-sm chartButton" id="chartToggle" style="display:none;"
+                    onclick="chartInfoToggle()">Toggle List By Name</button>
+                <button class="btn btn-success btn-sm chartButton" id="pieChartToggle" style="display:none;"
+                    onclick="pieChartToggle()">Toggle PieChart</button>
+            </div>
+            <div class="modal-body">
+                <p>Some text in the Modal Body</p>
+            </div>
+        </div>
     </div>
 
     <!-- Slider -->
     <div class="runningPage sliderDiv">
         <p>
             <span>
-                Time:<span id="sliderOutput"></span>
+                Time:
+                <span id="sliderOutput"></span>
+            </span>
+            <span id="nowBox">
+                Current:
+                <span id="now"></span>
+            </span>
+        </p>
+        <p>
+            <span>
+                Start:
+                <span id="startTime"></span>
             </span>
             <span>
-                Current Time:<span id="now"></span>
+                End:
+                <span id="endTime"></span>
             </span>
         </p>
         <input type="range" class="slider" id="myRange">
@@ -111,7 +154,30 @@
         </div>
     </footer>
 
+    <!-- studentTemplate Template-->
+    <template id="studentTemplate">
+        <div class="row text-center student">
+            <div class="col-4">
+                <div class="card h-100" style="border: 0;">
+                    <div class="card-body">
+                        <p class="card-text studentName"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-8">
+                <div class="card h-100" style="border: 0;">
+                    <div class="card-body cellBody">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr>
+    </template>
 
+    <!-- cellTemplates Template-->
+    <template id="cellTemplate">
+        <div class="progressCell"></div>
+    </template>
 </body>
 
 </html>
