@@ -10,6 +10,7 @@ let lockCurrentTime = false; //Slider val will go with current time
 let changeDateVariable = false;
 let incomingNewData = true;
 let currentNewData = true;
+let currentDay = false;
 
 var dbID = $("#surveyJSDBid").val();
 var dbaccessKey = $("#surveyJSDBaccessKey").val();
@@ -240,10 +241,12 @@ const data = new (class {
     this.dayEndTime = this.dayData[0].HappendAt;
     if (dt.dateToDateString(date) == todayDate) {
       useCurrentTime = $("#currentB").text() == "False" ? false : true;
+      currentDay = true;
       $("#current").show();
       if (!refreshInterval && !incomingNewData) runRefeshInterval();
     } else {
       useCurrentTime = false;
+      currentDay = false;
       clearInterval(refreshInterval);
       refreshInterval = null;
       $("#current").hide();
@@ -276,7 +279,8 @@ const data = new (class {
       currentTimeInterval = null;
       $("#now").hide();
       $(slider).attr("max", maxValue);
-      if (changeDateVariable && useCurrentTime) {
+      if (changeDateVariable) {
+        if (currentDay) return this.dataNewTime(dt.secondsToDate($(slider).val()));
         changeDateVariable = false;
         $(slider).val(maxValue);
         $("#sliderOutput").html(maxString);
@@ -354,7 +358,7 @@ const data = new (class {
           )
         };
       }),
-      "Name"
+      "name"
     );
   }
   arrayByQnLabel(a, time = new Date()) {
@@ -474,6 +478,18 @@ function jasonView(a) {
       document.getElementById("studentsProgress").appendChild(studentRow);
     });
   } else console.log("Template doesn't work");
+}
+
+let sortNameBy = "desc";
+function sortName() {
+  if (sortNameBy == "desc") {
+    data.arraySortString(data.nameArray, "name", "asc");
+    sortNameBy = "asc";
+  } else if (sortNameBy == "asc") {
+    data.arraySortString(data.nameArray, "name");
+    sortNameBy = "desc";
+  }
+  data.jasonView();
 }
 
 var clicks = 0;
