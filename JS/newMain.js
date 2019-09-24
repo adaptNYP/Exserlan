@@ -276,7 +276,7 @@ const data = new (class {
       currentTimeInterval = null;
       $("#now").hide();
       $(slider).attr("max", maxValue);
-      if (changeDateVariable) {
+      if (changeDateVariable && useCurrentTime) {
         changeDateVariable = false;
         $(slider).val(maxValue);
         $("#sliderOutput").html(maxString);
@@ -317,7 +317,8 @@ const data = new (class {
       } else {
         $("#holding").text("(Free)");
         this.holdingMode = false;
-        this.dataNewTime(dt.secondsToDate(parseInt($(slider).val())));
+        if (currentNewData)
+          this.dataNewTime(dt.secondsToDate(parseInt($(slider).val())));
       }
       currentNewData = false;
     }, this.timeInterval);
