@@ -26,10 +26,10 @@ function sendData() {
     data: {
       postId: "4ef0c037-a54a-4a3c-86ef-312cd48737bf",
       surveyResult: JSON.stringify({
-        Code: "codeGreen",
-        QnLabel: "A1",
+        Code: "",
+        QnLabel: "A6",
         Name: "Benny",
-        Answer: "Testing"
+        Answer: "I think question is invalid"
       })
     },
     success: () => {
