@@ -231,11 +231,16 @@ const data = new (class {
 
     //If selected date doesn't have data, only applicable for today's date
     if (this.dayData.length == 0) {
+      console.log("This date no data");
       $(".sliderDiv").hide();
       $("#studentsProgress").html("<p>No Data for this date</p>");
+      $("#buttons").hide();
       if (!refreshInterval && !incomingNewData) runRefeshInterval();
       return;
-    } else $(".sliderDiv").show();
+    } else {
+      $(".sliderDiv").show();
+      $("#buttons").show();
+    }
 
     //Get latest time
     this.dayEndTime = this.dayData[0].HappendAt;
