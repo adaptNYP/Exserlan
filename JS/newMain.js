@@ -280,7 +280,8 @@ const data = new (class {
       $("#now").hide();
       $(slider).attr("max", maxValue);
       if (changeDateVariable) {
-        if (currentDay) return this.dataNewTime(dt.secondsToDate($(slider).val()));
+        if (currentDay)
+          return this.dataNewTime(dt.secondsToDate($(slider).val()));
         changeDateVariable = false;
         $(slider).val(maxValue);
         $("#sliderOutput").html(maxString);
@@ -330,7 +331,7 @@ const data = new (class {
 
   dataNewTime(date) {
     date = new Date(date.getTime() + 1000); //Hacks
-    this.nameArray = this.arrayByNames(this.dayData, date);
+    this.nameArray = this.arrayByNames(this.dayData, date, sortNameBy);
     jasonView(this.nameArray);
     this.qnLabelArray = this.arrayByQnLabel(this.dayData, date);
   }
@@ -342,7 +343,7 @@ const data = new (class {
         HappendAt.getDate() == date.getDate()
     );
   }
-  arrayByNames(a, time = new Date()) {
+  arrayByNames(a, time = new Date(), sortNameBy) {
     return this.arraySortString(
       [...new Set(a.map(({ Name }) => Name))].map(name => {
         let c = a.filter(
@@ -358,7 +359,8 @@ const data = new (class {
           )
         };
       }),
-      "name"
+      "name",
+      sortNameBy
     );
   }
   arrayByQnLabel(a, time = new Date()) {
@@ -483,13 +485,14 @@ function jasonView(a) {
 let sortNameBy = "desc";
 function sortName() {
   if (sortNameBy == "desc") {
-    data.arraySortString(data.nameArray, "name", "asc");
     sortNameBy = "asc";
+    jasonView(data.arraySortString(data.nameArray, "name", "asc"));
+    $("#sortName").text("Sort by Name (Ascending)");
   } else if (sortNameBy == "asc") {
-    data.arraySortString(data.nameArray, "name");
     sortNameBy = "desc";
+    $("#sortName").text("Sort by Name (Decending)");
+    jasonView(data.arraySortString(data.nameArray, "name"));
   }
-  data.jasonView();
 }
 
 var clicks = 0;
