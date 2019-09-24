@@ -328,12 +328,12 @@ const data = new (class {
       currentNewData = false;
     }, this.timeInterval);
   }
-
   dataNewTime(date) {
     date = new Date(date.getTime() + 1000); //Hacks
     this.nameArray = this.arrayByNames(this.dayData, date, sortNameBy);
     jasonView(this.nameArray);
     this.qnLabelArray = this.arrayByQnLabel(this.dayData, date);
+    chartView(this.qnLabelArray);
   }
   arrayToDate(a, date) {
     return a.filter(
@@ -372,7 +372,7 @@ const data = new (class {
           data: [...new Set(c.map(({ Name }) => Name))].map(Name =>
             c.find(s => s.Name == Name)
           ),
-          type: !c.find(s => s.Code && s.Answer)
+          type: !c.find(s => s.Code || s.Answer)
             ? "MS" //Milestone
             : !c.find(s => s.Code)
             ? "FA" //Free Answer
@@ -434,6 +434,7 @@ const dt = new (class {
   }
 })();
 
+//Name View
 function jasonView(a) {
   $("#studentsProgress").html("");
   if ("content" in document.createElement("template")) {
@@ -493,6 +494,159 @@ function sortName() {
     $("#sortName").text("Sort by Name (Decending)");
     jasonView(data.arraySortString(data.nameArray, "name"));
   }
+}
+
+//Chart
+let sChart = false;
+function showChart() {
+  if (sChart) {
+    $(".chartHeight").hide();
+    sChart = false;
+  } else {
+    sChart = true;
+    $(".chartHeight").show();
+  }
+}
+
+const ctx = document.getElementById("chart").getContext("2d");
+const myChart = new Chart(ctx, {
+  type: "horizontalBar",
+  data: {},
+  options: {
+    aspectRatio: 1,
+    maintainAspectRatio: false,
+    onResize: () => {
+      console.log("asdasd");
+    },
+    animation: {
+      duration: 0,
+      onComplete: function() {
+        var chartInstance = this.chart,
+          ctx = chartInstance.ctx;
+        ctx.font = Chart.helpers.fontString(
+          Chart.defaults.global.defaultFontSize,
+          "bold",
+          Chart.defaults.global.defaultFontFamily
+        );
+        ctx.textAlign = "top";
+        ctx.textBaseline = "top";
+        this.data.datasets.forEach(function(dataset, i) {
+          var meta = chartInstance.controller.getDatasetMeta(i);
+          meta.data.forEach(function(bar, index) {
+            var data = dataset.data[index];
+            if (data != 0)
+              ctx.fillText(data, bar._model.x - 10, bar._model.y - 5);
+          });
+        });
+      }
+    },
+    scales: {
+      yAxes: [
+        {
+          barPercentage: 1,
+          stacked: true
+        }
+      ],
+      xAxes: [
+        {
+          stacked: true,
+          ticks: {
+            beginAtZero: true,
+            stepSize: 1
+          }
+        }
+      ]
+    }
+  }
+});
+
+function chartView(chartData) {
+  chartData = chartData.filter(value => value.data.length != 0);
+  let green = [],
+    red = [],
+    milestone = [],
+    freeText = [], //#007fff
+    codeGreen = [],
+    codeOrange = [],
+    codeRed = [];
+
+  chartData.forEach(({ data, type }) => {
+    if (type == "MS") {
+      green.push(0);
+      red.push(0);
+      milestone.push(data.length);
+      freeText.push(0);
+      codeGreen.push(0);
+      codeOrange.push(0);
+      codeRed.push(0);
+    } else if (type == "FA") {
+      green.push(0);
+      red.push(0);
+      milestone.push(0);
+      freeText.push(data.length);
+      codeGreen.push(0);
+      codeOrange.push(0);
+      codeRed.push(0);
+    } else {
+      green.push(
+        data.filter(({ Code, Answer }) => Code == "codeGreen" && Answer).length
+      );
+      red.push(
+        data.filter(({ Code, Answer }) => Code == "codeRed" && Answer).length
+      );
+      milestone.push(0);
+      freeText.push(0);
+      codeGreen.push(
+        data.filter(({ Code, Answer }) => Code == "codeOrange" && !Answer)
+          .length
+      );
+      codeOrange.push(data.filter(({ Code }) => Code == "codeOrange").length);
+      codeRed.push(
+        data.filter(({ Code, Answer }) => Code == "codeRed" && !Answer).length
+      );
+    }
+  });
+  myChart.data = {
+    labels: chartData.map(({ QnLabel }) => QnLabel),
+    datasets: [
+      {
+        label: "Correct",
+        backgroundColor: "green",
+        data: green
+      },
+      {
+        label: "Wrong",
+        backgroundColor: "red",
+        data: red
+      },
+      {
+        label: "CodeGreen",
+        backgroundColor: "#77dd77",
+        data: codeGreen
+      },
+      {
+        label: "CodeOrange",
+        backgroundColor: "#ffb347",
+        data: codeOrange
+      },
+      {
+        label: "CodeRed ",
+        backgroundColor: "#ff6961",
+        data: codeRed
+      },
+      {
+        label: "Milestone",
+        backgroundColor: "grey",
+        data: milestone
+      },
+      {
+        label: "Free Answer",
+        backgroundColor: "#007fff",
+        data: freeText
+      }
+    ]
+  };
+  myChart.update();
 }
 
 var clicks = 0;
