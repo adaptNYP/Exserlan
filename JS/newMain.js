@@ -9,6 +9,7 @@ let currentTimeInterval;
 let lockCurrentTime = false; //Slider val will go with current time
 let changeDateVariable = false;
 let incomingNewData = true;
+let currentNewData = true;
 
 var dbID = $("#surveyJSDBid").val();
 var dbaccessKey = $("#surveyJSDBaccessKey").val();
@@ -150,6 +151,7 @@ function runRefeshInterval() {
         refreshLimit.restart();
         if (oldDataLength != length) {
           incomingNewData = true;
+          currentNewData = true;
           runningRefresh();
         } //There's new Data
       })
@@ -290,6 +292,7 @@ const data = new (class {
     this.holdingMode = null;
     this.timeInterval = 0;
     this.currentInterval();
+    currentNewData = true;
   }
   currentInterval() {
     currentTimeInterval = setInterval(() => {
@@ -310,12 +313,13 @@ const data = new (class {
         $("#holding").text("(Lock)");
         $(slider).val(currentSeconds);
         $("#sliderOutput").html(dt.dateToTimeString(currentTime));
-        this.dataNewTime(currentTime);
+        if (currentNewData) this.dataNewTime(currentTime);
       } else {
         $("#holding").text("(Free)");
         this.holdingMode = false;
         this.dataNewTime(dt.secondsToDate(parseInt($(slider).val())));
       }
+      currentNewData = false;
     }, this.timeInterval);
   }
 
