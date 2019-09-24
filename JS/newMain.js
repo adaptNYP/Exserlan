@@ -201,12 +201,12 @@ const data = new (class {
   mainSort() {
     changeDateVariable = true;
     let d = (this.sortedData = this.ajaxData.concat());
-    d.map(value => {
-      let date = new Date(value.HappendAt);
-      if (date.getHours() >= 16) date = new Date(date.getTime() - 16 * 3600000);
-      else date = new Date(date.getTime() + 8 * 3600000);
-      return (value.HappendAt = date);
-    });
+    d.map(
+      value =>
+        (value.HappendAt = new Date(
+          new Date(value.HappendAt).getTime() + 8 * 3600000
+        ))
+    );
     d.sort((a, b) => new Date(b.HappendAt) - new Date(a.HappendAt));
     let uniqueDates = [
       ...new Set(d.map(({ HappendAt }) => dt.dateToDateString(HappendAt)))
@@ -645,7 +645,7 @@ function chartView(chartData) {
         data: milestone
       },
       {
-        label: "Free Answer",
+        label: "Free Response",
         backgroundColor: "#007fff",
         data: freeText
       }
