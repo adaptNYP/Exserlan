@@ -23,10 +23,15 @@ var span = document.getElementsByClassName("close")[0];
 var modal = document.getElementById("myModal");
 
 // When the user clicks on <span> (x), close the modal
-span.onclick = () => (modal.style.display = "none");
+span.onclick = () => {
+  modal.style.display = "none";
+  chartInfoDisplay = false;
+};
 
-window.onclick = event =>
+window.onclick = event => {
   event.target == modal ? (modal.style.display = "none") : "";
+  chartInfoDisplay = false;
+};
 
 function useMe(evt) {
   $("#surveyJSDBid").val($(evt).data().dbid);
@@ -175,6 +180,8 @@ function runningRefresh() {
 function changeDate(evt) {
   $(slider).val(50);
   changeDateVariable = true;
+  sChart = false;
+  $(".chartHeight").hide();
   data.setDate(new Date(evt.options[evt.selectedIndex].text));
 }
 
@@ -335,11 +342,19 @@ const data = new (class {
       currentNewData = false;
     }, this.timeInterval);
   }
+  dateHolder;
   dataNewTime(date) {
-    date = new Date(date.getTime() + 1000); //Hacks
+    this.dateHolder = date = new Date(date.getTime() + 1000); //Hacks
     this.nameArray = this.arrayByNames(this.dayData, date, sortNameBy);
     jasonView(this.nameArray);
-    this.qnLabelArray = this.arrayByQnLabel(this.dayData, date);
+    if (sChart) {
+      this.runChartView();
+      if (refreshChartInfo) refreshChartInfo();
+    }
+  }
+  runChartView() {
+    console.log("run chart");
+    this.qnLabelArray = this.arrayByQnLabel(this.dayData, this.dateHolder);
     chartView(this.qnLabelArray);
   }
   arrayToDate(a, date) {
@@ -512,6 +527,7 @@ function showChart() {
   } else {
     sChart = true;
     $(".chartHeight").show();
+    data.runChartView();
   }
 }
 
@@ -656,35 +672,50 @@ function chartView(chartData) {
   myChart.update();
 }
 
+let chartInfoDataPoint;
 document.getElementById("chart").onclick = function(evt) {
   var activePoints = myChart.getElementsAtEvent(evt);
   if (activePoints.length > 0) {
-    var label = myChart.data.labels[activePoints[0]["_index"]];
-    modal.querySelector(".modal-header h2").innerHTML = label;
-    data.chartInfos = data.nameArray
-      .map(user => user.progress.find(({ QnLabel }) => label == QnLabel))
-      .filter(value => value);
+    modal.querySelector(".modal-header h2").innerHTML = chartInfoDataPoint =
+      myChart.data.labels[activePoints[0]["_index"]];
     chartInfoView();
   }
 };
 
 //Chart Info
 let chartInfo = "name";
+let chartInfoDisplay = false;
 function chartInfoToggle() {
+  togglePieChart = false;
   if (chartInfo == "name") {
     $("#chartToggle").html("Toggle List By Answer");
     chartInfo = "answer";
-    chartInfoView();
+    chartInfoFillData();
   } else {
     $("#chartToggle").html("Toggle List By Name");
     chartInfo = "name";
-    chartInfoView();
+    chartInfoFillData();
   }
 }
 
 function chartInfoView() {
+  chartInfoDisplay = true;
   togglePieChart = false;
   $(".modal-body").removeClass("zeroPadding");
+  refreshChartInfo();
+  modal.style.display = "block";
+  $(".chartButton").show();
+}
+function refreshChartInfo() {
+  data.chartInfos = data.nameArray
+    .map(user =>
+      user.progress.find(({ QnLabel }) => chartInfoDataPoint == QnLabel)
+    )
+    .filter(value => value);
+  chartInfoFillData();
+}
+
+function chartInfoFillData() {
   let message = "";
   if (chartInfo == "name") {
     message = `
@@ -743,8 +774,6 @@ function chartInfoView() {
       });
   }
   modal.querySelector(".modal-body").innerHTML = message;
-  modal.style.display = "block";
-  $(".chartButton").show();
 }
 
 //Pie Chart
@@ -845,6 +874,7 @@ function tableResolve(event) {
       $(event)
         .removeClass("tableUnresolvedRed")
         .addClass("tableResolvedRed");
+      
     } else if (d.Code == "codeOrange") {
       $(event)
         .removeClass("tableUnresolvedOrange")
