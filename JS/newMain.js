@@ -266,6 +266,31 @@ const data = new (class {
       $("#current").hide();
     }
     incomingNewData = false;
+
+    //Add resolved data
+    let cDate =
+      currentDay || !$("#dateSelection").val()
+        ? dt.dateToDateString(new Date())
+        : $("#dateSelection").val();
+    let resolvedThisDateData = resolvedData.filter(s => s.date == cDate);
+    if (resolvedThisDateData) {
+      for (let i = 0; i < resolvedThisDateData.length; i++) {
+        const { Answer, Code, HappendAt, Name, QnLabel } = resolvedThisDateData[
+          i
+        ].data;
+        let rd = {
+          Code,
+          QnLabel,
+          Name,
+          Answer,
+          HappendAt
+        };
+        this.dayData = this.dayData.map(data =>
+          isEquivalent(data, rd) ? (data = resolvedThisDateData[i].data) : data
+        );
+      }
+    }
+
     this.setUp();
   }
 
@@ -345,8 +370,7 @@ const data = new (class {
   dateHolder;
   dataNewTime(date) {
     this.dateHolder = date = new Date(date.getTime() + 1000); //Hacks
-    this.nameArray = this.arrayByNames(this.dayData, date, sortNameBy);
-    jasonView(this.nameArray);
+    this.refreshJasonView();
     if (sChart) {
       this.runChartView();
       if (refreshChartInfo) refreshChartInfo();
@@ -356,6 +380,14 @@ const data = new (class {
     console.log("run chart");
     this.qnLabelArray = this.arrayByQnLabel(this.dayData, this.dateHolder);
     chartView(this.qnLabelArray);
+  }
+  refreshJasonView() {
+    this.nameArray = this.arrayByNames(
+      this.dayData,
+      this.dateHolder,
+      sortNameBy
+    );
+    jasonView(this.nameArray);
   }
   arrayToDate(a, date) {
     return a.filter(
@@ -465,6 +497,7 @@ function jasonView(a) {
       var studentRow = document.importNode(studentTemplate.content, true);
       studentRow.querySelector(".studentName").innerHTML = name;
       progress.forEach(({ QnLabel, Answer, Code, resolved }, indexProg) => {
+        console.log({ QnLabel, Answer, Code, resolved });
         var cellTemplate = document.querySelector("#cellTemplate");
         var cloneCell = document.importNode(cellTemplate.content, true);
         cloneCell.querySelector(".progressCell").dataset.name = name;
@@ -866,37 +899,33 @@ function pieChartToggle() {
 }
 
 //Resolve management
+let resolvedData = [];
 function tableResolve(event) {
   const index = $(event).data("index");
   const d = data.chartInfos[index];
+  function resolveD() {
+    data.dayData.map(data => (d == data ? (data.resolved = new Date()) : data));
+    d.resolved = new Date();
+    resolvedData.push({
+      date: currentDay
+        ? dt.dateToDateString(new Date())
+        : $("#dateSelection").val(),
+      data: d
+    });
+    data.refreshJasonView();
+  }
   if (!d.resolved) {
     if (d.Code == "codeRed") {
       $(event)
         .removeClass("tableUnresolvedRed")
         .addClass("tableResolvedRed");
-      
+      resolveD();
     } else if (d.Code == "codeOrange") {
       $(event)
         .removeClass("tableUnresolvedOrange")
         .addClass("tableResolveddOrange");
+      resolveD();
     } else if (d.Code == "codeGreen") return;
-    // if (running) {
-    //   data.happendAt = new Date();
-    //   resolvedArray.push(data);
-    // } else
-    //   for (i = 0; i < historicalData.length; i++) {
-    //     if (data.name[i].name == data.name) {
-    //       for (y = 0; y < historicalData[i].progress.length; y++) {
-    //         const progress = historicalData[i].progress[y];
-    //         if (
-    //           progress.qnLabel == data.qnLabel &&
-    //           progress.happendAt == data.happendAt
-    //         )
-    //           progress.resolved = true;
-    //       }
-    //       break;
-    //     }
-    //   }
   }
 }
 
@@ -930,9 +959,8 @@ function resolveAlert(e) {
     $(this).addClass("resolved");
 
     var indexHist = this.getAttribute("data-index-hist");
-    var indexProg = this.getAttribute("data-index-prog");
+
     console.log(indexHist);
-    console.log(indexProg);
     var thisStudentProgress = data.nameArray[indexHist].progress;
     thisStudentProgress[indexProg].resolved = 1;
   }
@@ -959,7 +987,8 @@ function exportToCSV() {
       QnLabel: value.QnLabel,
       Answer: value.Answer ? value.Answer : "",
       Code: value.Code ? value.Code : "",
-      HappendAt: value.HappendAt
+      HappendAt: value.HappendAt,
+      resolved: value.resolved ? value.resolved : ""
     };
   });
   const headers = {
@@ -967,7 +996,8 @@ function exportToCSV() {
     QnLabel: "QnLabel",
     Answer: "Answer",
     Code: "Code",
-    HappendAt: "HappendAt"
+    HappendAt: "HappendAt",
+    resolved: "Resolved At"
   };
 
   if (headers) {
@@ -996,7 +1026,7 @@ function exportToCSV() {
 
   var exportedFilenmae =
     `coursedata${
-      currentDay ? dateToDateString(new Date()) : $("#dateSelection").val()
+      currentDay ? dt.dateToDateString(new Date()) : $("#dateSelection").val()
     }.csv` || "export.csv";
 
   var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -1017,6 +1047,21 @@ function exportToCSV() {
       document.body.removeChild(link);
     }
   }
+}
+
+function isEquivalent(a, b) {
+  var aProps = Object.getOwnPropertyNames(a);
+  var bProps = Object.getOwnPropertyNames(b);
+  if (aProps.length != bProps.length) return false;
+  for (var i = 0; i < aProps.length; i++) {
+    var propName = aProps[i];
+    if (a[propName] !== b[propName]) {
+      if (propName == "HappendAt") {
+        if (a[propName].getTime() !== b[propName].getTime()) return false;
+      } else return false;
+    }
+  }
+  return true;
 }
 
 //Testing
