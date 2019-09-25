@@ -187,6 +187,8 @@ const data = new (class {
   resolveData = []; //Resolved Data
   nameArray = []; //Name Data, Jason's View
   qnLabelArray = []; //QnLabel Data for Charts
+  chartInfos = []; //Chart info after clicking bar chart
+
   getData(dbID, dbaccessKey) {
     return new Promise((resolve, reject) => {
       $.ajax({
@@ -520,9 +522,7 @@ const myChart = new Chart(ctx, {
   options: {
     aspectRatio: 1,
     maintainAspectRatio: false,
-    onResize: () => {
-      console.log("asdasd");
-    },
+    // onResize: () => console.log("asdasd"),
     animation: {
       duration: 0,
       onComplete: function() {
@@ -539,8 +539,10 @@ const myChart = new Chart(ctx, {
           var meta = chartInstance.controller.getDatasetMeta(i);
           meta.data.forEach(function(bar, index) {
             var data = dataset.data[index];
-            if (data != 0)
-              ctx.fillText(data, bar._model.x - 10, bar._model.y - 5);
+            if (data != 0) {
+              ctx.fillStyle = "black";
+              ctx.fillText(data, bar._model.x - 20, bar._model.y - 5);
+            }
           });
         });
       }
@@ -570,7 +572,7 @@ function chartView(chartData) {
   let green = [],
     red = [],
     milestone = [],
-    freeText = [], //#007fff
+    freeText = [],
     codeGreen = [],
     codeOrange = [],
     codeRed = [];
@@ -654,6 +656,220 @@ function chartView(chartData) {
   myChart.update();
 }
 
+document.getElementById("chart").onclick = function(evt) {
+  var activePoints = myChart.getElementsAtEvent(evt);
+  if (activePoints.length > 0) {
+    var label = myChart.data.labels[activePoints[0]["_index"]];
+    modal.querySelector(".modal-header h2").innerHTML = label;
+    data.chartInfos = data.nameArray
+      .map(user => user.progress.find(({ QnLabel }) => label == QnLabel))
+      .filter(value => value);
+    chartInfoView();
+  }
+};
+
+//Chart Info
+let chartInfo = "name";
+function chartInfoToggle() {
+  if (chartInfo == "name") {
+    $("#chartToggle").html("Toggle List By Answer");
+    chartInfo = "answer";
+    chartInfoView();
+  } else {
+    $("#chartToggle").html("Toggle List By Name");
+    chartInfo = "name";
+    chartInfoView();
+  }
+}
+
+function chartInfoView() {
+  togglePieChart = false;
+  $(".modal-body").removeClass("zeroPadding");
+  let message = "";
+  if (chartInfo == "name") {
+    message = `
+      <div class="row" style="font-weight: bold;text-align: center;">
+          <div class="col-4 breakword">Name</div>
+          <div class="col-6 breakword">Answer</div>
+          <div class="col-2 breakword">UR</div>
+      </div>`;
+    data.chartInfos.map((value, index) => {
+      message += `
+      <hr>
+      <div class="row" style="font-size: 0.8em;">
+        <div class="col-4 breakword tableCenter">${value.Name}</div>
+        <div class="col-6 breakword tableCenter">${value.Answer}</div>
+        <div class="col-2 breakword" style="display: flex;">
+          <div data-index ="${index}" onclick="tableResolve(this)" class="${
+        value.Code == "codeGreen"
+          ? "tableGreen"
+          : value.Code == "codeRed"
+          ? value.resolved
+            ? "tableResolvedRed"
+            : "tableUnresolvedRed"
+          : value.resolved
+          ? "tableResolvedOrange"
+          : "tableUnresolvedOrange"
+      }" style="border-radius: 50%; height: 20px; width: 20px; margin: auto;"></div>
+        </div>
+      </div>
+      `;
+    });
+  } else {
+    message = `
+      <div class="row" style="font-weight: bold;text-align: center;">
+          <div class="col-4 breakword">Number</div>
+          <div class="col-8 breakword">Answer</div>
+      </div>`;
+    [...new Set(data.chartInfos.map(({ Answer }) => Answer))]
+      .map(uniqueanswer => {
+        return {
+          number: data.chartInfos.filter(({ Answer }) => Answer == uniqueanswer)
+            .length,
+          uniqueanswer
+        };
+      })
+      .sort((a, b) => {
+        return a.number > b.number ? -1 : b.number > a.number ? 1 : 0;
+      })
+      .forEach(value => {
+        message += `
+      <hr>
+      <div class="row" style="font-size: 0.8em;">
+        <div class="col-4 breakword">${value.number}</div>
+        <div class="col-8 breakword">${value.uniqueanswer}</div>
+      </div>
+    `;
+      });
+  }
+  modal.querySelector(".modal-body").innerHTML = message;
+  modal.style.display = "block";
+  $(".chartButton").show();
+}
+
+//Pie Chart
+let togglePieChart = false;
+function pieChartToggle() {
+  if (!togglePieChart) {
+    togglePieChart = true;
+    modal.querySelector(
+      ".modal-body"
+    ).innerHTML = `<canvas id="piechart"></canvas>`;
+    $(".modal-body").addClass("zeroPadding");
+
+    const piectx = document.getElementById("piechart").getContext("2d");
+
+    const uniqueanswer = [
+      ...new Set(data.chartInfos.map(({ Answer }) => Answer))
+    ];
+
+    let answers = uniqueanswer
+      .map(uniqueanswer => {
+        return {
+          number: data.chartInfos.filter(({ Answer }) => Answer == uniqueanswer)
+            .length,
+          uniqueanswer,
+          code: data.chartInfos.find(s => s.Answer == uniqueanswer).Code
+        };
+      })
+      .sort((a, b) => {
+        return a.number > b.number ? -1 : b.number > a.number ? 1 : 0;
+      });
+    const total = answers
+      .map(({ number }) => number)
+      .reduce((a, b) => a + b, 0);
+
+    const datasets = [
+      {
+        data: answers.map(({ number }) => number),
+        backgroundColor: answers.map(({ Code }, index) => {
+          if (Code == "codeGreen") return "#4baea0";
+          else red = Math.floor(Math.random() * 175) + 50;
+          return `rgb(254, ${red}, ${red})`;
+        })
+      }
+    ];
+
+    new Chart(piectx, {
+      type: "pie",
+      data: {
+        datasets,
+        labels: answers.map(({ uniqueanswer }) => uniqueanswer)
+      },
+      options: {
+        aspectRatio: 1,
+        responsive: false,
+        animation: {
+          duration: 0,
+          onComplete: function() {
+            var chartInstance = this.chart,
+              ctx = chartInstance.ctx;
+            ctx.font = Chart.helpers.fontString(
+              Chart.defaults.global.defaultFontSize,
+              "bold",
+              Chart.defaults.global.defaultFontFamily
+            );
+            ctx.textAlign = "top";
+            ctx.textBaseline = "top";
+            this.data.datasets.forEach(function(dataset, i) {
+              var meta = chartInstance.controller.getDatasetMeta(i);
+              meta.data.forEach(function(element, index) {
+                var data = dataset.data[index];
+                if (data != 0) {
+                  var padding = 5;
+                  var position = element.tooltipPosition();
+                  ctx.fillText(
+                    (data / total) * 100 + "%",
+                    position.x,
+                    position.y - 16 / 2 - padding
+                  );
+                }
+              });
+            });
+          }
+        }
+      }
+    });
+  } else {
+    togglePieChart = false;
+    chartInfoView();
+  }
+}
+
+//Resolve management
+function tableResolve(event) {
+  const index = $(event).data("index");
+  const d = data.chartInfos[index];
+  if (!d.resolved) {
+    if (d.Code == "codeRed") {
+      $(event)
+        .removeClass("tableUnresolvedRed")
+        .addClass("tableResolvedRed");
+    } else if (d.Code == "codeOrange") {
+      $(event)
+        .removeClass("tableUnresolvedOrange")
+        .addClass("tableResolveddOrange");
+    } else if (d.Code == "codeGreen") return;
+    // if (running) {
+    //   data.happendAt = new Date();
+    //   resolvedArray.push(data);
+    // } else
+    //   for (i = 0; i < historicalData.length; i++) {
+    //     if (data.name[i].name == data.name) {
+    //       for (y = 0; y < historicalData[i].progress.length; y++) {
+    //         const progress = historicalData[i].progress[y];
+    //         if (
+    //           progress.qnLabel == data.qnLabel &&
+    //           progress.happendAt == data.happendAt
+    //         )
+    //           progress.resolved = true;
+    //       }
+    //       break;
+    //     }
+    //   }
+  }
+}
+
 var clicks = 0;
 function dynamicFeedback() {
   clicks++; // Issue with global clicks
@@ -693,6 +909,85 @@ function resolveAlert(e) {
 }
 
 const todayDate = dt.dateToDateString(new Date());
+
+// Exporting Functions Json and CSV
+function exportToJsonFile() {
+  let dataStr = JSON.stringify(data.dayData);
+  let dataUri =
+    "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
+  let exportFileDefaultName = "data.json";
+  let linkElement = document.createElement("a");
+  linkElement.setAttribute("href", dataUri);
+  linkElement.setAttribute("download", exportFileDefaultName);
+  linkElement.click();
+}
+
+function exportToCSV() {
+  const changedData = data.dayData.map(value => {
+    return {
+      Name: value.Name,
+      QnLabel: value.QnLabel,
+      Answer: value.Answer ? value.Answer : "",
+      Code: value.Code ? value.Code : "",
+      HappendAt: value.HappendAt
+    };
+  });
+  const headers = {
+    Name: "Name",
+    QnLabel: "QnLabel",
+    Answer: "Answer",
+    Code: "Code",
+    HappendAt: "HappendAt"
+  };
+
+  if (headers) {
+    changedData.unshift(headers);
+  }
+  var jsonObject = JSON.stringify(changedData);
+
+  var csv = (jsonObject => {
+    var array =
+      typeof jsonObject != "object" ? JSON.parse(jsonObject) : jsonObject;
+    var str = "";
+
+    for (var i = 0; i < array.length; i++) {
+      var line = "";
+      for (var index in array[i]) {
+        if (line != "") line += ",";
+
+        line += array[i][index];
+      }
+
+      str += line + "\r\n";
+    }
+
+    return str;
+  })(jsonObject);
+
+  var exportedFilenmae =
+    `coursedata${
+      currentDay ? dateToDateString(new Date()) : $("#dateSelection").val()
+    }.csv` || "export.csv";
+
+  var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  if (navigator.msSaveBlob) {
+    // IE 10+
+    navigator.msSaveBlob(blob, exportedFilenmae);
+  } else {
+    var link = document.createElement("a");
+    if (link.download !== undefined) {
+      // feature detection
+      // Browsers that support HTML5 download attribute
+      var url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", exportedFilenmae);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
+}
 
 //Testing
 $("#startButton").click();
