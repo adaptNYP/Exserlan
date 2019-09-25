@@ -34,10 +34,11 @@ window.onclick = event => {
 };
 
 function useMe(evt) {
-  $("#surveyJSDBid").val($(evt).data().dbid);
-  $("#surveyJSDBaccessKey").val($(evt).data().dbaccesskey);
+  $("#surveyJSDBid").val((_dbid = $(evt).data().dbid));
+  $("#surveyJSDBaccessKey").val((_dbaccesskey = $(evt).data().dbaccesskey));
   start();
 }
+let _dbid, _dbaccesskey;
 
 $("#clearID").click(() => {
   window.localStorage.removeItem(LSK);
@@ -107,6 +108,13 @@ function toggleCurrent() {
 
 //////////////////////////////////////////////////Start
 function start() {
+  if (_dbid && _dbaccesskey) {
+    dbID = _dbid;
+    dbaccessKey = _dbaccesskey;
+  } else {
+    dbID = $("#surveyJSDBid").val();
+    dbaccessKey = $("#surveyJSDBaccessKey").val();
+  }
   if (dbID && dbaccessKey) {
     $("#surveyJSDBid, #surveyJSDBaccessKey, #startButton").prop(
       "disabled",
@@ -1060,4 +1068,4 @@ function isEquivalent(a, b) {
 }
 
 //Testing
-$("#startButton").click();
+// $("#startButton").click();
