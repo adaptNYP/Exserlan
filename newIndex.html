@@ -95,10 +95,15 @@
                 </div>
                 <div class="row" id="buttons">
                     <div class="col-7">
-                        <div>
+                        <div style="float: left;">
                             <button class="btn btn-success btn-sm" onclick="sortName()" id="sortName">Sort by Name
                                 (Dscending)</button>
-                            <button class="btn btn-success btn-sm" onclick="showChart()">Show Chart</button>
+                            <div style="display: flex; justify-content: space-between;">
+                                <button class="btn btn-success btn-sm" onclick="showChart()">Show Chart</button>
+                                /
+                                <button class="btn btn-success btn-sm"
+                                    onclick="data.refreshJasonView()">Default</button>
+                            </div>
                         </div>
                     </div>
                     <div class="col-5">

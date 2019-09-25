@@ -381,11 +381,7 @@ const data = new (class {
     chartView(this.qnLabelArray);
   }
   refreshJasonView() {
-    this.nameArray = this.arrayByNames(
-      this.dayData,
-      this.dateHolder,
-      sortNameBy
-    );
+    this.nameArray = this.arrayByNames(this.dayData, this.dateHolder);
     jasonView(this.nameArray);
   }
   arrayToDate(a, date) {
@@ -397,24 +393,22 @@ const data = new (class {
     );
   }
   arrayByNames(a, time = new Date(), sortNameBy) {
-    return this.arraySortString(
-      [...new Set(a.map(({ Name }) => Name))].map(name => {
-        let c = a.filter(
-          ({ Name, HappendAt }) => name == Name && HappendAt <= time
-        );
-        return {
-          name,
-          progress: this.arraySortString(
-            [...new Set(c.map(({ QnLabel }) => QnLabel))].map(QnLabel =>
-              c.find(s => s.QnLabel == QnLabel)
-            ),
-            "QnLabel"
-          )
-        };
-      }),
-      "name",
-      sortNameBy
-    );
+    let newArray = [...new Set(a.map(({ Name }) => Name))].map(name => {
+      let c = a.filter(
+        ({ Name, HappendAt }) => name == Name && HappendAt <= time
+      );
+      return {
+        name,
+        progress: this.arraySortString(
+          [...new Set(c.map(({ QnLabel }) => QnLabel))].map(QnLabel =>
+            c.find(s => s.QnLabel == QnLabel)
+          ),
+          "QnLabel"
+        )
+      };
+    });
+    if (!sortNameBy) return newArray;
+    return this.arraySortString(newArray, "name", sortNameBy);
   }
   arrayByQnLabel(a, time = new Date()) {
     return this.arraySortString(
@@ -538,7 +532,7 @@ function jasonView(a) {
   } else console.log("Template doesn't work");
 }
 
-let sortNameBy = "desc";
+let sortNameBy = "";
 function sortName() {
   if (sortNameBy == "desc") {
     sortNameBy = "asc";
