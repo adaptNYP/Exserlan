@@ -722,6 +722,7 @@ let chartInfo = "name";
 let chartInfoDisplay = false;
 function chartInfoToggle() {
   togglePieChart = false;
+  $(".modal-body").removeClass("zeroPadding");
   if (chartInfo == "name") {
     $("#chartToggle").html("Toggle List By Answer");
     chartInfo = "answer";
@@ -925,7 +926,7 @@ function tableResolve(event) {
     } else if (d.Code == "codeOrange") {
       $(event)
         .removeClass("tableUnresolvedOrange")
-        .addClass("tableResolveddOrange");
+        .addClass("tableResolvedOrange");
       resolveD();
     } else if (d.Code == "codeGreen") return;
   }
