@@ -290,7 +290,6 @@ const data = new (class {
         );
       }
     }
-
     this.setUp();
   }
 
@@ -492,19 +491,20 @@ const dt = new (class {
 function jasonView(a) {
   $("#studentsProgress").html("");
   if ("content" in document.createElement("template")) {
-    a.forEach(({ name, progress }, indexHist) => {
+    a.forEach(({ name, progress }) => {
       var studentTemplate = document.querySelector("#studentTemplate");
       var studentRow = document.importNode(studentTemplate.content, true);
       studentRow.querySelector(".studentName").innerHTML = name;
-      progress.forEach(({ QnLabel, Answer, Code, resolved }, indexProg) => {
-        console.log({ QnLabel, Answer, Code, resolved });
+      progress.forEach(d => {
+        const { QnLabel, Answer, Code, resolved } = d;
         var cellTemplate = document.querySelector("#cellTemplate");
         var cloneCell = document.importNode(cellTemplate.content, true);
         cloneCell.querySelector(".progressCell").dataset.name = name;
         cloneCell.querySelector(".progressCell").innerHTML = QnLabel;
         cloneCell.querySelector(".progressCell").dataset.qnLabel = QnLabel;
-        cloneCell.querySelector(".progressCell").dataset.indexHist = indexHist;
-        cloneCell.querySelector(".progressCell").dataset.indexProg = indexProg;
+        cloneCell.querySelector(
+          ".progressCell"
+        ).dataset.indexHist = data.dayData.findIndex(dd => d == dd);
         cloneCell
           .querySelector(".progressCell")
           .classList.add(
@@ -954,15 +954,16 @@ function dynamicFeedback() {
 
 function resolveAlert(e) {
   e.preventDefault();
+  if ($(this).hasClass("resolved")) return;
   if ($(this).hasClass("codeOrange") || $(this).hasClass("codeRed")) {
-    // add class to change border style of cell
     $(this).addClass("resolved");
-
-    var indexHist = this.getAttribute("data-index-hist");
-
-    console.log(indexHist);
-    var thisStudentProgress = data.nameArray[indexHist].progress;
-    thisStudentProgress[indexProg].resolved = 1;
+    data.dayData[this.getAttribute("data-index-hist")].resolved = new Date();
+    resolvedData.push({
+      date: currentDay
+        ? dt.dateToDateString(new Date())
+        : $("#dateSelection").val(),
+      data: data.dayData[this.getAttribute("data-index-hist")]
+    });
   }
 }
 
