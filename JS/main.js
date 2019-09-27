@@ -1,30 +1,99 @@
-var currentData = [];
-var historicalData = [];
-var globalCounter = 0;
-var allNames = [];
-let containment = [];
-let globalChartData = [];
-var timer;
-const TIMER_PERIOD = 5000;
-var autoRefresh = true;
-var clicks = 0;
-var clickTimer = null;
+const LSK = "keys"; //Local Storage Key
+const REFRESH_DATA_RATE = 1000; // 1s
+const REFRESH_DEFAULT_LIMIT = 2;
+
 var DOUBLECLICK_DELAY = 300; //300 Milliseconds, 0.3 seconds
-var firstDataReceived = false;
-var firstDataInterval = null;
-let sortNameBy = "desc";
-let today = new Date("2019-08-21T08:52:24.0545633"); //To be changed without inputs
-let startingTime = new Date(),
-  endTime = new Date();
+let useCurrentTime = true; //Max time is current time, only valid if date is same
+let refreshInterval = null;
+let currentTimeInterval;
+let lockCurrentTime = false; //Slider val will go with current time
+let changeDateVariable = false;
+let incomingNewData = true;
+let currentNewData = true;
+let currentDay = false;
 
-let running = false;
-let resolvedArray = [];
+$(document).ready(function() {
+  if(isAPIAvailable()) {
+	$('#files').bind('change', handleFileSelect);
+  }
+});
 
+switch(window.location.protocol) {
+   case 'http:':
+   case 'https:':
+	   getTxt = function (){
+
+		  $.ajax({
+			url:'surveyJSDBinfo.txt',
+			success: function (data){
+			  info = data.split(',');
+			  $("#surveyJSDBid").val(info[0]);
+			  $("#surveyJSDBaccessKey").val(info[1]);
+			}
+		  });
+		}();
+     
+     break;
+   case 'file:':
+     console.log('over file');
+     break;
+   default: 
+     //some other protocol
+}
+
+function isAPIAvailable() {
+  // Check for the various File API support.
+  if (window.File && window.FileReader && window.FileList && window.Blob) {
+	// Great success! All the File APIs are supported.
+	return true;
+  } else {
+	// source: File API availability - http://caniuse.com/#feat=fileapi
+	// source: <output> availability - http://html5doctor.com/the-output-element/
+	document.writeln('The HTML5 APIs used in this form are only available in the following browsers:<br />');
+	// 6.0 File API & 13.0 <output>
+	document.writeln(' - Google Chrome: 13.0 or later<br />');
+	// 3.6 File API & 6.0 <output>
+	document.writeln(' - Mozilla Firefox: 6.0 or later<br />');
+	// 10.0 File API & 10.0 <output>
+	document.writeln(' - Internet Explorer: Not supported (partial support expected in 10.0)<br />');
+	// ? File API & 5.1 <output>
+	document.writeln(' - Safari: Not supported<br />');
+	// ? File API & 9.2 <output>
+	document.writeln(' - Opera: Not supported');
+	return false;
+  }
+}
+
+function handleFileSelect(evt) {
+  var files = evt.target.files; // FileList object
+  var file = files[0];
+
+  var reader = new FileReader();
+  reader.readAsText(file);
+  
+  reader.onload = function(event){
+	var csv = event.target.result;
+	var data = $.csv.toArrays(csv);
+	var index = 0;
+	
+	for(var row in data) {
+	  for(var item in data[row]) {
+		if(index==0) {
+			$("#surveyJSDBid").val(data[row][item]);
+			index = index + 1;
+		}
+		else {
+			$("#surveyJSDBaccessKey").val(data[row][item]);
+		}
+	  }
+	}; 
+  }	
+  reader.onerror = function(){ alert('Unable to read ' + file.fileName); };
+}
+
+var dbID = $("#surveyJSDBid").val();
+var dbaccessKey = $("#surveyJSDBaccessKey").val();
 let slider = document.getElementById("myRange");
-
-const INITIAL_RUNNING_MSG = "Click on 'Stop' to terminate the app.";
-const TOGGLE_RUNNING_MSG =
-  "Data is in! You can toggle between manual or auto refresh.";
 
 // Get the <span> element that closes the modal
 var span = document.getElementsByClassName("close")[0];
@@ -33,302 +102,510 @@ var span = document.getElementsByClassName("close")[0];
 var modal = document.getElementById("myModal");
 
 // When the user clicks on <span> (x), close the modal
-span.onclick = () => (modal.style.display = "none");
+span.onclick = () => {
+  modal.style.display = "none";
+  chartInfoDisplay = false;
+};
 
-// When the user clicks anywhere outside of the modal, close it
-window.onclick = event =>
+window.onclick = event => {
   event.target == modal ? (modal.style.display = "none") : "";
+  chartInfoDisplay = false;
+};
 
-function dynamicFeedback() {
-  clicks++; // Issue with global clicks
-  if (clicks == 1) {
-    displayInfo = () => {
-      modal.querySelector(".modal-header h2").innerHTML = `${this.getAttribute(
-        "data-name"
-      )} - ${this.getAttribute("data-qn-label")}`;
+function useMe(evt) {
+  $("#surveyJSDBid").val((_dbid = $(evt).data().dbid));
+  $("#surveyJSDBaccessKey").val((_dbaccesskey = $(evt).data().dbaccesskey));
+  start();
+}
+let _dbid, _dbaccesskey;
 
-      modal.querySelector(".modal-body").innerHTML = this.getAttribute(
-        "data-answer"
-      );
-      $(".chartButton").hide();
-      modal.style.display = "block";
-      clicks = 0;
-    };
-    clickTimer = setTimeout(displayInfo, DOUBLECLICK_DELAY);
+$("#clearID").click(() => {
+  window.localStorage.removeItem(LSK);
+  loadIDHolder();
+});
+
+$("#startButton").click(() => start());
+
+$("#clearButton").click(() => {
+  $("#surveyJSDBid").val("");
+  $("#surveyJSDBaccessKey").val("");
+});
+
+$("#stopButton").click(() => {
+  clearInterval(refreshInterval);
+  refreshInterval = null;
+});
+
+slider.oninput = function() {
+  $("#sliderOutput").html(dt.formatTime(this.value));
+  data.dataNewTime(dt.secondsToDate(this.value));
+};
+
+function loadIDHolder() {
+  const keys = JSON.parse(window.localStorage.getItem(LSK));
+  $("#firstKeyRow")
+    .nextAll()
+    .remove();
+  if (keys) {
+    $("#keyRowList").show();
+    let appendingHTML = "";
+    keys.forEach(({ dbID, dbaccessKey }) => {
+      appendingHTML += `
+        <hr>
+        <div class="row">
+            <div class="col-5">
+                <p class="wordBreak">${dbID}</p>
+            </div>
+            <div class="col-5">
+                <p class="wordBreak">${dbaccessKey}</p>
+            </div>
+            <div class="col-2 nopadding" style="display: flex">
+                <button class="btn btn-success btn-sm useMe" onclick="useMe(this)"data-dbID="${dbID}" data-dbaccessKey="${dbaccessKey}" style="margin: auto;">Use</button>
+            </div>
+        </div>
+    `;
+    });
+    $("#firstKeyRow").after(appendingHTML);
+  } else $("#keyRowList").hide();
+}
+loadIDHolder();
+
+function toggleCurrent() {
+  if (useCurrentTime) {
+    useCurrentTime = false;
+    $("#currentB").html("False");
+    clearInterval(currentTimeInterval);
+    currentTimeInterval = null;
+    $("#holding").hide();
+    data.setUp();
   } else {
-    clearTimeout(clickTimer); // If double click, else show DisplayInfo
-    clicks = 0;
+    useCurrentTime = true;
+    $("#currentB").html("True");
+    if (!currentTimeInterval) data.setUp();
   }
 }
 
-function resolveAlert(e) {
-  console.log("asdas")
-  e.preventDefault();
-  if (!autoRefresh) {
-    if ($(this).hasClass("codeOrange") || $(this).hasClass("codeRed")) {
-      // add class to change border style of cell
-      $(this).addClass("resolved");
-
-      var indexHist = this.getAttribute("data-index-hist");
-      var indexProg = this.getAttribute("data-index-prog");
-
-      var thisStudentProgress = historicalData[indexHist].progress;
-      thisStudentProgress[indexProg].resolved = 1;
-    }
+//////////////////////////////////////////////////Start
+function start() {
+  if (_dbid && _dbaccesskey) {
+    dbID = _dbid;
+    dbaccessKey = _dbaccesskey;
+  } else {
+    dbID = $("#surveyJSDBid").val();
+    dbaccessKey = $("#surveyJSDBaccessKey").val();
   }
-}
-
-function checkForFirstDataStream() {
-  $("#studentsProgress").html("<p>Awaiting input...</p>");
-  firstDataInterval = setInterval(worker, TIMER_PERIOD);
-}
-
-function worker() {
-  // Retrieve data from database
-  var currentRes = (() => {
-    var tmp = null;
-    var dbRootURL = "https://dxsurvey.com/api/MySurveys/getSurveyResults/";
-    var dbID = $("#surveyJSDBid").val();
-    var dbaccessKey = $("#surveyJSDBaccessKey").val();
-
-    // remove after testing
-    dbID = "89c190aa-9d8b-4d34-af41-61f602d54a9b";
-    // dbID = "2d109f03-72d2-4cd1-bcd2-e5e028c06ca9";
-    dbaccessKey = "4d09c11a98484a91b9182b2f6bff76c9";
-
-    $.ajax({
-      async: false,
-      type: "GET",
-      url: dbRootURL + dbID + "?accessKey=" + dbaccessKey,
-      dataType: "json",
-      success: data => {
-        tmp = data;
-        if (tmp.Data.length != 0 && !firstDataReceived) {
-          firstDataReceived = true;
-          clearInterval(firstDataInterval);
-          $("#toggleMode")
-            .on("click", toggleRefreshMode)
-            .removeClass("btn-default")
-            .addClass("btn-info")
-            .html("Manual now");
-          $("#runningMsg").html(
-            `${INITIAL_RUNNING_MSG}<br>${TOGGLE_RUNNING_MSG}`
-          );
-          autoRefresh = false;
-          $("#manualRefreshBtn").show();
-          $(".dataButtons").show();
-        }
-      },
-      complete: () => {
-        // Schedule the next request when the current one's complete
-        console.log("Retrieved from database");
-        console.log(autoRefresh);
-        if (autoRefresh) timer = setTimeout(worker, TIMER_PERIOD); //Calls only once
-      }
-    });
-    return tmp;
-  })();
-  // currentRes.Data.sort((a, b) => new Date(a.HappendAt) - new Date(b.HappendAt)); //Accending Date
-
-  currentData = [...new Set(currentRes.Data.slice(globalCounter))]; //Is it even neccessary to put the slice
-
-  var newCounter = currentRes.Data.length;
-
-  if (globalCounter < newCounter) {
-    globalCounter = newCounter;
-
-    //Remove Date only leave time //Remove after testing
-    currentData.map(value => {
-      const date = new Date(value.HappendAt);
-      value.HappendAt = new Date(
-        2019,
-        7,
-        21,
-        date.getHours(),
-        date.getMinutes(),
-        date.getSeconds()
-      );
-    });
-
-    startingTime = currentData[0].HappendAt;
-    currentData
-      .map(({ HappendAt }) => HappendAt)
-      .forEach(HappendAt => {
-        if (HappendAt < startingTime) {
-          startingTime = HappendAt;
-        }
-      });
-    slider.setAttribute("min", dateToSeconds(startingTime));
-
-    //To be replaced with current time
-    endTime = currentData[0].HappendAt;
-    currentData
-      .map(({ HappendAt }) => HappendAt)
-      .forEach(HappendAt => {
-        if (HappendAt > endTime) {
-          endTime = HappendAt;
-        }
-      });
-    slider.setAttribute("max", dateToSeconds(endTime));
-    slider.setAttribute("value", dateToSeconds(endTime));
-    document.getElementById(
-      "now"
-    ).innerHTML = `${endTime.getHours()}:${endTime.getMinutes()}:${endTime.getSeconds()}`;
-    document.getElementById("sliderOutput").innerHTML = formatTimeToHTML(
-      endTime
+  if (dbID && dbaccessKey) {
+    $("#surveyJSDBid, #surveyJSDBaccessKey, #startButton").prop(
+      "disabled",
+      true
     );
-
-    //Sort Desc
-    currentData.sort((a, b) => new Date(b.HappendAt) - new Date(a.HappendAt));
-
-    // Group According to Names
-    historicalData = dataArrayToNames(currentData);
-    containment = historicalData.concat(); //global
-    const chartData = dataArrayToQnLabel(currentData);
-
-    // Format Chart Max Value
-    myChart.options.scales.xAxes[0].ticks.suggestedMax = Math.max(
-      ...chartData.map(({ data }) => data.length)
-    );
-    myChart.update();
-    globalChartData = chartData;
-    //Display
-    chartView(chartData);
-    refreshView();
-  }
+    $("#firstLoading").show();
+    data
+      .getData(dbID, dbaccessKey)
+      .then(data => {
+        let ka = JSON.parse(window.localStorage.getItem(LSK));
+        if (!ka) ka = [];
+        if (!ka.find(k => k.dbID == dbID && k.dbaccessKey == dbaccessKey)) {
+          ka.push({ dbID, dbaccessKey });
+          window.localStorage.setItem(LSK, JSON.stringify(ka));
+          loadIDHolder();
+        }
+        if (data.length == 0) alert("No data");
+        else mainPageProcessing();
+      }) // .catch(() => alert("Invalid dbID/dbaccessKey"))
+      .finally(() => {
+        $("#surveyJSDBid, #surveyJSDBaccessKey, #startButton").prop(
+          "disabled",
+          false
+        );
+        $("#firstLoading").hide();
+      });
+  } else alert("Empty dbID/dbaccessKey");
 }
 
-function dataArrayToNames(array, time = endTime) {
-  const namesTemp = [...new Set(array.map(({ Name }) => Name))].map(
-    GroupName => {
-      return {
-        name: GroupName,
-        progress: []
-      };
+function mainPageProcessing() {
+  $(".firstPage").hide();
+  $(".runningPage").show();
+  runningRefresh(); //First run
+  runRefeshInterval();
+}
+
+function runRefeshInterval() {
+  let refreshLimit = {
+    limit: REFRESH_DEFAULT_LIMIT,
+    restart: () => (this.limit = REFRESH_DEFAULT_LIMIT)
+  };
+  refreshInterval = setInterval(() => {
+    console.log("Refreshing");
+    let oldDataLength = [...data.ajaxData].length;
+    data
+      .getData(dbID, dbaccessKey)
+      .then(({ length }) => {
+        refreshLimit.restart();
+        if (oldDataLength != length) {
+          incomingNewData = true;
+          currentNewData = true;
+          runningRefresh();
+        } //There's new Data
+      })
+      .catch(() => refreshLimit.limit--);
+    if (refreshLimit == 0) {
+      clearInterval(refreshInterval);
+      refreshInterval = null;
+      alert("Refesh limit hit, error with connection");
+      $(".firstPage").show();
     }
-  );
-  namesTemp.map(value => {
-    value.progress = array
-      .filter(({ Name, HappendAt }) => value.name == Name && HappendAt <= time)
-      .map(({ QnLabel, Code, Answer, HappendAt }) => {
-        return {
-          qnLabel: QnLabel,
-          code: Code,
-          answer: Answer,
-          happendAt: HappendAt
+  }, REFRESH_DATA_RATE);
+}
+
+//Main function for running
+function runningRefresh() {
+  console.log("Refreshing page data");
+  data.mainSort();
+}
+
+function changeDate(evt) {
+  $(slider).val(50);
+  changeDateVariable = true;
+  sChart = false;
+  $(".chartHeight").hide();
+  data.setDate(new Date(evt.options[evt.selectedIndex].text));
+}
+
+const data = new (class {
+  dbRootURL = "https://dxsurvey.com/api/MySurveys/getSurveyResults/";
+  ajaxData = []; //All Data
+  sortedData = [];
+  dayData = []; //Selected Date Data
+  dayEndTime; // Day EndTime
+  resolveData = []; //Resolved Data
+  nameArray = []; //Name Data, Jason's View
+  qnLabelArray = []; //QnLabel Data for Charts
+  chartInfos = []; //Chart info after clicking bar chart
+
+  getData(dbID, dbaccessKey) {
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        type: "GET",
+        url: `${this.dbRootURL + dbID}?accessKey=${dbaccessKey}`,
+        dataType: "json"
+      })
+        .done(value => resolve((this.ajaxData = value.Data)))
+        .fail((jqXHR, textStatus) => reject(new Error(textStatus)));
+    });
+  }
+  mainSort() {
+    changeDateVariable = true;
+    let d = (this.sortedData = this.ajaxData.concat());
+    d.map(
+      value =>
+        (value.HappendAt = new Date(
+          new Date(value.HappendAt).getTime() + 8 * 3600000
+        ))
+    );
+    d.sort((a, b) => new Date(b.HappendAt) - new Date(a.HappendAt));
+    let uniqueDates = [
+      ...new Set(d.map(({ HappendAt }) => dt.dateToDateString(HappendAt)))
+    ];
+    let holder = $("#dateSelection").val();
+    $("#dateSelection").html(() => {
+      let newArray = uniqueDates
+        .map(d => (d != todayDate ? `<option>${d}</option>` : undefined))
+        .filter(a => a);
+      newArray.unshift(`<option>${todayDate} (Today)</option>`);
+      return newArray.reduce((a, b) => a + b);
+    });
+    if (holder) {
+      $("#dateSelection").val(holder);
+      this.setDate(new Date(holder));
+    } else this.setDate(new Date());
+  }
+
+  //Activate when change date
+  setDate(date) {
+    this.dayData = this.arrayToDate(this.sortedData, date);
+
+    //If selected date doesn't have data, only applicable for today's date
+    if (this.dayData.length == 0) {
+      console.log("This date no data");
+      $(".sliderDiv").hide();
+      $("#studentsProgress").html("<p>No Data for this date</p>");
+      $("#buttons").hide();
+      if (!refreshInterval && !incomingNewData) runRefeshInterval();
+      return;
+    } else {
+      $(".sliderDiv").show();
+      $("#buttons").show();
+    }
+
+    //Get latest time
+    this.dayEndTime = this.dayData[0].HappendAt;
+    if (dt.dateToDateString(date) == todayDate) {
+      useCurrentTime = $("#currentB").text() == "False" ? false : true;
+      currentDay = true;
+      $("#current").show();
+      if (!refreshInterval && !incomingNewData) runRefeshInterval();
+    } else {
+      useCurrentTime = false;
+      currentDay = false;
+      clearInterval(refreshInterval);
+      refreshInterval = null;
+      $("#current").hide();
+    }
+    incomingNewData = false;
+
+    //Add resolved data
+    let cDate =
+      currentDay || !$("#dateSelection").val()
+        ? dt.dateToDateString(new Date())
+        : $("#dateSelection").val();
+    let resolvedThisDateData = resolvedData.filter(s => s.date == cDate);
+    if (resolvedThisDateData) {
+      for (let i = 0; i < resolvedThisDateData.length; i++) {
+        const { Answer, Code, HappendAt, Name, QnLabel } = resolvedThisDateData[
+          i
+        ].data;
+        let rd = {
+          Code,
+          QnLabel,
+          Name,
+          Answer,
+          HappendAt
         };
-      });
-    value.progress = [...new Set(value.progress.map(({ qnLabel }) => qnLabel))]
-      .map(qnLabel => value.progress.find(s => qnLabel == s.qnLabel))
-      .sort((a, b) => {
-        return a.qnLabel < b.qnLabel ? -1 : b.qnLabel < a.qnLabel ? 1 : 0;
-      });
-  });
-  arraySortString(namesTemp, "name");
-  return namesTemp;
-}
-
-function dataArrayToQnLabel(array, time = endTime) {
-  let newData = [...new Set(array.map(({ QnLabel }) => QnLabel))].map(
-    QnLabel => {
-      return { QnLabel, data: [], type: "" }; //MCQ & Free response/MCQ Traffic light(Code no answer)/Milestones(No Code no Answer)
+        this.dayData = this.dayData.map(data =>
+          isEquivalent(data, rd) ? (data = resolvedThisDateData[i].data) : data
+        );
+      }
     }
-  );
-  newData.map(value => {
-    value.data = array.filter(
-      ({ QnLabel, HappendAt }) => value.QnLabel == QnLabel && HappendAt <= time
+    this.setUp();
+  }
+
+  //Activate with useCurrentTime button
+  setUp() {
+    const earliestTime = this.dayData[this.dayData.length - 1].HappendAt;
+    const minValue = dt.dateToSeconds(earliestTime);
+    const maxValue = dt.dateToSeconds(this.dayEndTime);
+    const maxString = dt.dateToTimeString(this.dayEndTime);
+    $(slider).attr("min", minValue);
+
+    //Testing
+    $("#startTime").text(dt.dateToTimeString(earliestTime));
+    // $("#endTime").text(maxString);
+
+    //If there is a change of date/html is not set
+    if ($("#sliderOutput").html() == "" || changeDateVariable)
+      $("#sliderOutput").html(maxString);
+
+    //Check if use current time
+    if (useCurrentTime) {
+      if (!currentTimeInterval) this.runCurrentInterval();
+    } else {
+      clearInterval(currentTimeInterval);
+      currentTimeInterval = null;
+      $("#now").hide();
+      $(slider).attr("max", maxValue);
+      if (changeDateVariable) {
+        if (currentDay)
+          return this.dataNewTime(dt.secondsToDate($(slider).val()));
+        changeDateVariable = false;
+        $(slider).val(maxValue);
+        $("#sliderOutput").html(maxString);
+        this.dataNewTime(this.dayEndTime);
+      } else this.dataNewTime(dt.secondsToDate($(slider).val()));
+    }
+  }
+  holdingMode = null;
+  timeInterval = 0;
+  runCurrentInterval() {
+    $("#now").show();
+    $("#holding").show();
+    this.holdingMode = null;
+    this.timeInterval = 0;
+    this.currentInterval();
+    currentNewData = true;
+  }
+  currentInterval() {
+    currentTimeInterval = setInterval(() => {
+      const currentTime = new Date();
+      const currentSeconds = dt.dateToSeconds(currentTime);
+      slider.setAttribute("max", currentSeconds);
+      $("#now").html(dt.dateToTimeString(currentTime));
+      if (this.holdingMode == null) {
+        clearInterval(currentTimeInterval);
+        this.timeInterval = 2000;
+        this.currentInterval();
+      }
+      if (
+        parseInt($(slider).val()) + 3 >= currentSeconds ||
+        this.holdingMode == null
+      ) {
+        this.holdingMode = true;
+        $("#holding").text("(Lock)");
+        $(slider).val(currentSeconds);
+        $("#sliderOutput").html(dt.dateToTimeString(currentTime));
+        if (currentNewData) this.dataNewTime(currentTime);
+      } else {
+        $("#holding").text("(Free)");
+        this.holdingMode = false;
+        if (currentNewData)
+          this.dataNewTime(dt.secondsToDate(parseInt($(slider).val())));
+      }
+      currentNewData = false;
+    }, this.timeInterval);
+  }
+  dateHolder;
+  dataNewTime(date) {
+    this.dateHolder = date = new Date(date.getTime() + 1000); //Hacks
+    this.refreshJasonView();
+    if (sChart) {
+      this.runChartView();
+      if (refreshChartInfo) refreshChartInfo();
+    }
+  }
+  runChartView() {
+    console.log("run chart");
+    this.qnLabelArray = this.arrayByQnLabel(this.dayData, this.dateHolder);
+    chartView(this.qnLabelArray);
+  }
+  refreshJasonView() {
+    this.nameArray = this.arrayByNames(this.dayData, this.dateHolder);
+    jasonView(this.nameArray);
+  }
+  arrayToDate(a, date) {
+    return a.filter(
+      ({ HappendAt }) =>
+        HappendAt.getFullYear() == date.getFullYear() &&
+        HappendAt.getMonth() == date.getMonth() &&
+        HappendAt.getDate() == date.getDate()
     );
-    value.data = [...new Set(value.data.map(({ Name }) => Name))].map(Name =>
-      value.data.find(s => s.Name == Name)
+  }
+  arrayByNames(a, time = new Date(), sortNameBy) {
+    let newArray = [...new Set(a.map(({ Name }) => Name))].map(name => {
+      let c = a.filter(
+        ({ Name, HappendAt }) => name == Name && HappendAt <= time
+      );
+      return {
+        name,
+        progress: this.arraySortString(
+          [...new Set(c.map(({ QnLabel }) => QnLabel))].map(QnLabel =>
+            c.find(s => s.QnLabel == QnLabel)
+          ),
+          "QnLabel"
+        )
+      };
+    });
+    if (!sortNameBy) return newArray;
+    return this.arraySortString(newArray, "name", sortNameBy);
+  }
+  arrayByQnLabel(a, time = new Date()) {
+    return this.arraySortString(
+      [...new Set(a.map(({ QnLabel }) => QnLabel))].map(QnLabel => {
+        let c = a.filter(v => QnLabel == v.QnLabel && v.HappendAt <= time);
+        return {
+          QnLabel,
+          data: [...new Set(c.map(({ Name }) => Name))].map(Name =>
+            c.find(s => s.Name == Name)
+          ),
+          type: !c.find(s => s.Code || s.Answer)
+            ? "MS" //Milestone
+            : !c.find(s => s.Code)
+            ? "FA" //Free Answer
+            : !c.find(s => s.Answer)
+            ? "TL" //Traffic Light
+            : ""
+        };
+      }),
+      "QnLabel"
     );
-    if (!value.data.find(s => s.Code)) value.type = "MS";
-    else if (!value.data.find(s => s.Answer)) value.type = "TL";
-  });
-  newData.sort((a, b) => {
-    return a.QnLabel < b.QnLabel ? -1 : b.QnLabel < a.QnLabel ? 1 : 0;
-  });
-  console.log(newData);
-  return newData;
-}
+  }
+  arraySortString(array, name, ascdesc = "desc") {
+    return array.sort((a, b) => {
+      return ascdesc == "desc"
+        ? a[name] < b[name]
+          ? -1
+          : b[name] < a[name]
+          ? 1
+          : 0
+        : ascdesc == "asc"
+        ? a[name] > b[name]
+          ? -1
+          : b[name] > a[name]
+          ? 1
+          : 0
+        : new Error("Unable to sort");
+    });
+  }
+})();
 
-function arraySortString(array, name, ascdesc = "desc") {
-  return array.sort((a, b) => {
-    return ascdesc == "desc"
-      ? a[name] < b[name]
-        ? -1
-        : b[name] < a[name]
-        ? 1
-        : 0
-      : ascdesc == "asc"
-      ? a[name] > b[name]
-        ? -1
-        : b[name] > a[name]
-        ? 1
-        : 0
-      : new Error("Unable to sort");
-  });
-}
+const dt = new (class {
+  dateToSeconds(date = new Date()) {
+    return date.getSeconds() + date.getMinutes() * 60 + date.getHours() * 3600;
+  }
+  dateToTimeString(date) {
+    return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+  }
+  dateToDateString(date) {
+    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  }
+  formatTime(s) {
+    let seconds = s % 60;
+    let hours = Math.trunc(s / 60 / 60);
+    let minutes = (s - hours * 60 * 60 - seconds) / 60;
+    return `${hours}:${minutes}:${seconds}`;
+  }
+  secondsToDate(s) {
+    let seconds = s % 60;
+    let hours = Math.trunc(s / 60 / 60);
+    let minutes = (s - hours * 60 * 60 - seconds) / 60;
+    return new Date(
+      data.dayEndTime.getFullYear(),
+      data.dayEndTime.getMonth(),
+      data.dayEndTime.getDate(),
+      hours,
+      minutes,
+      seconds
+    );
+  }
+})();
 
-function refreshView() {
-  document.getElementById("studentsProgress").innerHTML = "";
-
+//Name View
+function jasonView(a) {
+  $("#studentsProgress").html("");
   if ("content" in document.createElement("template")) {
-    historicalData.forEach(({ name, progress }, indexHist) => {
-      // Instantiate the div with the existing HTML tbody
-      // and the row with the template
+    a.forEach(({ name, progress }) => {
       var studentTemplate = document.querySelector("#studentTemplate");
-
-      // Clone the new row and insert it into the table
       var studentRow = document.importNode(studentTemplate.content, true);
       studentRow.querySelector(".studentName").innerHTML = name;
-
-      progress.forEach(({ qnLabel, answer, code, resolved }, indexProg) => {
+      progress.forEach(d => {
+        const { QnLabel, Answer, Code, resolved } = d;
         var cellTemplate = document.querySelector("#cellTemplate");
         var cloneCell = document.importNode(cellTemplate.content, true);
-
-        //assign student name to cell
         cloneCell.querySelector(".progressCell").dataset.name = name;
-        // prepare cell with data from qnLabel
-        cloneCell.querySelector(".progressCell").innerHTML = qnLabel;
-        cloneCell.querySelector(".progressCell").dataset.qnLabel = qnLabel;
-
-        // prepare cell with indices from historicalData and thisStudentProgress
-        cloneCell.querySelector(".progressCell").dataset.indexHist = indexHist;
-        cloneCell.querySelector(".progressCell").dataset.indexProg = indexProg;
-
-        // prepare cell with classes
-        cloneCell.querySelector(".progressCell").classList.add(
-          (() =>
-            // Prepare class according to first character of QnLabel in data
-            // Possible values = uppercase alphabet
-            ["A", "B", "C", "D"]
-              .filter(value => value == qnLabel.charAt(0))
-              .map(value => `class${value}`)[0])()
-        );
-
-        // Prepare class according to code in data
-        // Possible values: codeRed, codeGreen, codeOrange
-        if (!(typeof code === "undefined")) {
-          cloneCell.querySelector(".progressCell").classList.add(code);
-          //prepare cells with dataset
-          cloneCell.querySelector(".progressCell").dataset.code = code;
+        cloneCell.querySelector(".progressCell").innerHTML = QnLabel;
+        cloneCell.querySelector(".progressCell").dataset.qnLabel = QnLabel;
+        cloneCell.querySelector(
+          ".progressCell"
+        ).dataset.indexHist = data.dayData.findIndex(dd => d == dd);
+        cloneCell
+          .querySelector(".progressCell")
+          .classList.add(
+            (() =>
+              ["A", "B", "C", "D"]
+                .filter(value => value == QnLabel.charAt(0))
+                .map(value => `class${value}`)[0])()
+          );
+        if (!(typeof Code === "undefined") && Code) {
+          cloneCell.querySelector(".progressCell").classList.add(Code);
+          cloneCell.querySelector(".progressCell").dataset.code = Code;
         }
-
-        // Prepare class according to feedback in data
-        if (!(typeof answer === "undefined")) {
-          //prepare cells with classes
+        if (!(typeof Answer === "undefined") && Answer) {
           cloneCell
             .querySelector(".progressCell")
             .classList.add("feedbackCell");
-          //prepare cells with dataset
-          cloneCell.querySelector(".progressCell").dataset.answer = answer;
+          cloneCell.querySelector(".progressCell").dataset.answer = Answer;
         }
-
-        // Prepare class according to resolved status in data
-        if (!(typeof resolved === "undefined")) {
-          //prepare cells with classes
+        if (!(typeof resolved === "undefined") && resolved)
           cloneCell.querySelector(".progressCell").classList.add("resolved");
-        }
         studentRow.querySelector(".cellBody").appendChild(cloneCell);
         $(studentRow)
           .find(".feedbackCell:last-child")
@@ -339,14 +616,38 @@ function refreshView() {
       });
       document.getElementById("studentsProgress").appendChild(studentRow);
     });
-  } else {
-    console.log("Template doesn't work");
-    // Find another way to add the rows to the table because
-    // the HTML template element is not supported.
+  } else console.log("Template doesn't work");
+}
+
+let sortNameBy = "";
+function sortName() {
+  if (sortNameBy === "") sortNameBy = "asc";
+  if (sortNameBy == "desc") {
+    sortNameBy = "asc";
+    jasonView(data.arraySortString(data.nameArray, "name", "asc"));
+    $("#sortName").text("Sort by Name (Ascending)");
+  } else if (sortNameBy == "asc") {
+    sortNameBy = "desc";
+    $("#sortName").text("Sort by Name (Descending)");
+    jasonView(data.arraySortString(data.nameArray, "name", "desc"));
   }
 }
 
-// Chart
+//Chart
+let sChart = false;
+function showChart() {
+  if (sChart) {
+    $(".chartHeight").hide();
+	$('#showChartBtn').text("Show Chart");
+    sChart = false;
+  } else {
+    sChart = true;
+    $(".chartHeight").show();
+	$('#showChartBtn').text("Hide Chart");
+    data.runChartView();
+  }
+}
+
 const ctx = document.getElementById("chart").getContext("2d");
 const myChart = new Chart(ctx, {
   type: "horizontalBar",
@@ -354,9 +655,7 @@ const myChart = new Chart(ctx, {
   options: {
     aspectRatio: 1,
     maintainAspectRatio: false,
-    onResize: () => {
-      console.log("asdasd");
-    },
+    // onResize: () => console.log("asdasd"),
     animation: {
       duration: 0,
       onComplete: function() {
@@ -373,8 +672,10 @@ const myChart = new Chart(ctx, {
           var meta = chartInstance.controller.getDatasetMeta(i);
           meta.data.forEach(function(bar, index) {
             var data = dataset.data[index];
-            if (data != 0)
-              ctx.fillText(data, bar._model.x - 10, bar._model.y - 5);
+            if (data != 0) {
+              ctx.fillStyle = "black";
+              ctx.fillText(data, bar._model.x - 20, bar._model.y - 5);
+            }
           });
         });
       }
@@ -399,134 +700,33 @@ const myChart = new Chart(ctx, {
   }
 });
 
-let chartInfo = "name";
-function chartInfoToggle() {
-  if (chartInfo == "name") {
-    $("#chartToggle").html("Toggle List By Answer");
-    chartInfo = "answer";
-    refreshChartInfo();
-  } else {
-    $("#chartToggle").html("Toggle List By Name");
-    chartInfo = "name";
-    refreshChartInfo();
-  }
-}
-
-let currentChartLabel = "";
-let chartInfos = [];
-document.getElementById("chart").onclick = function(evt) {
-  var activePoints = myChart.getElementsAtEvent(evt);
-  if (activePoints.length > 0) {
-    var clickedElementindex = activePoints[0]["_index"];
-    var label = myChart.data.labels[clickedElementindex];
-    currentChartLabel = label;
-
-    const progressQNData = historicalData
-      .map(user => {
-        progressQN = user.progress.filter(
-          ({ qnLabel, answer }) => label == qnLabel && answer
-        )[0];
-        let { answer, code, qnLabel, happendAt, resolved } = progressQN;
-        if (progressQN)
-          return {
-            name: user.name,
-            answer,
-            code,
-            qnLabel,
-            happendAt,
-            resolved
-          };
-      })
-      .filter(value => value);
-
-    modal.querySelector(".modal-header h2").innerHTML = label;
-    chartInfos = progressQNData;
-    refreshChartInfo();
-  }
-};
-function refreshChartInfo() {
-  togglePieChart = false;
-  $(".modal-body").removeClass("zeroPadding");
-  let message = "";
-  if (chartInfo == "name") {
-    message = `
-      <div class="row" style="font-weight: bold;text-align: center;">
-          <div class="col-4 breakword">Name</div>
-          <div class="col-6 breakword">Answer</div>
-          <div class="col-2 breakword">UR</div>
-      </div>`;
-    chartInfos.map((value, index) => {
-      message += `
-      <hr>
-      <div class="row" style="font-size: 0.8em;">
-        <div class="col-4 breakword tableCenter">${value.name}</div>
-        <div class="col-6 breakword tableCenter">${value.answer}</div>
-        <div class="col-2 breakword" style="display: flex;">
-          <div data-index ="${index}" onclick="tableResolve(this)" class="${
-        value.code == "codeGreen"
-          ? "tableGreen"
-          : value.code == "codeRed"
-          ? value.resolved
-            ? "tableResolvedRed"
-            : "tableUnresolvedRed"
-          : value.resolved
-          ? "tableResolvedOrange"
-          : "tableUnresolvedOrange"
-      }" style="border-radius: 50%; height: 20px; width: 20px; margin: auto;"></div>
-        </div>
-      </div>
-      `;
-    });
-  } else {
-    message = `
-      <div class="row" style="font-weight: bold;text-align: center;">
-          <div class="col-4 breakword">Number</div>
-          <div class="col-8 breakword">Answer</div>
-      </div>`;
-    [...new Set(chartInfos.map(({ answer }) => answer))]
-      .map(uniqueanswer => {
-        return {
-          number: chartInfos.filter(({ answer }) => answer == uniqueanswer)
-            .length,
-          uniqueanswer
-        };
-      })
-      .sort((a, b) => {
-        return a.number > b.number ? -1 : b.number > a.number ? 1 : 0;
-      })
-      .forEach(value => {
-        message += `
-      <hr>
-      <div class="row" style="font-size: 0.8em;">
-        <div class="col-4 breakword">${value.number}</div>
-        <div class="col-8 breakword">${value.uniqueanswer}</div>
-      </div>
-    `;
-      });
-  }
-  modal.querySelector(".modal-body").innerHTML = message;
-  modal.style.display = "block";
-  $(".chartButton").show();
-}
-
 function chartView(chartData) {
   chartData = chartData.filter(value => value.data.length != 0);
   let green = [],
-    orange = [],
     red = [],
-    grey = [],
+    milestone = [],
+    freeText = [],
     codeGreen = [],
     codeOrange = [],
     codeRed = [];
 
   chartData.forEach(({ data, type }) => {
     if (type == "MS") {
-      green.push(0),
-        red.push(0),
-        grey.push(data.length),
-        codeGreen.push(0),
-        codeOrange.push(0),
-        codeRed.push(0);
+      green.push(0);
+      red.push(0);
+      milestone.push(data.length);
+      freeText.push(0);
+      codeGreen.push(0);
+      codeOrange.push(0);
+      codeRed.push(0);
+    } else if (type == "FA") {
+      green.push(0);
+      red.push(0);
+      milestone.push(0);
+      freeText.push(data.length);
+      codeGreen.push(0);
+      codeOrange.push(0);
+      codeRed.push(0);
     } else {
       green.push(
         data.filter(({ Code, Answer }) => Code == "codeGreen" && Answer).length
@@ -534,7 +734,8 @@ function chartView(chartData) {
       red.push(
         data.filter(({ Code, Answer }) => Code == "codeRed" && Answer).length
       );
-      grey.push(0);
+      milestone.push(0);
+      freeText.push(0);
       codeGreen.push(
         data.filter(({ Code, Answer }) => Code == "codeOrange" && !Answer)
           .length
@@ -576,108 +777,124 @@ function chartView(chartData) {
       {
         label: "Milestone",
         backgroundColor: "grey",
-        data: grey
+        data: milestone
+      },
+      {
+        label: "Free Response",
+        backgroundColor: "#007fff",
+        data: freeText
       }
     ]
   };
   myChart.update();
 }
 
-function getLabelColor(QnLabel) {
-  return (() => {
-    switch (QnLabel.charAt(0)) {
-      case "A":
-        return "#ffccff";
-      case "B":
-        return "lightyellow";
-      case "C":
-        return "lightblue";
-      case "D":
-        return "#ccff99";
-    }
-  })();
-}
-
-function sortName() {
-  if (sortNameBy == "desc") {
-    arraySortString(historicalData, "name", "asc");
-    sortNameBy = "asc";
-  } else if (sortNameBy == "asc") {
-    arraySortString(historicalData, "name");
-    sortNameBy = "desc";
+let chartInfoDataPoint;
+document.getElementById("chart").onclick = function(evt) {
+  var activePoints = myChart.getElementsAtEvent(evt);
+  if (activePoints.length > 0) {
+    modal.querySelector(".modal-header h2").innerHTML = chartInfoDataPoint =
+      myChart.data.labels[activePoints[0]["_index"]];
+    chartInfoView();
   }
-  refreshView();
-}
-
-function hideInputs() {
-  $("#landingJumbo").hide();
-  $("#appRunningJumbo").show();
-  $("#toggleMode")
-    .off("click", toggleRefreshMode)
-    .removeClass("btn-info btn-danger")
-    .addClass("btn-default")
-    .html("Waiting...");
-  autoRefresh = false;
-  $("#manualRefreshBtn").hide();
-  $(".dataButtons").hide();
 };
 
-function clearTimer() {
-  clearTimeout(timer);
-  $("#landingJumbo").show();
-  $("#appRunningJumbo").hide();
-  $("#toggleMode")
-    .off("click", toggleRefreshMode)
-    .removeClass("btn-info btn-danger")
-    .addClass("btn-default")
-    .html("Waiting...");
-  autoRefresh = false;
-  $("#manualRefreshBtn").hide();
-  $(".dataButtons").hide();
-  currentData = [];
-  historicalData = [];
-  containment = [];
-  globalCounter = 0;
-  allNames = [];
-  clicks = 0;
-  firstDataReceived = false;
-  $("#runningMsg").text(INITIAL_RUNNING_MSG);
-}
-
-function toggleRefreshMode() {
-  if ($("#toggleMode").hasClass("btn-danger")) {
-    $("#toggleMode")
-      .removeClass("btn-danger")
-      .addClass("btn-info")
-      .html("Manual now");
-    autoRefresh = false;
-    $("#manualRefreshBtn").show();
-    $(".dataButtons").show();
+//Chart Info
+let chartInfo = "name";
+let chartInfoDisplay = false;
+function chartInfoToggle() {
+  togglePieChart = false;
+  $(".modal-body").removeClass("zeroPadding");
+  if (chartInfo == "name") {
+    $("#chartToggle").html("Toggle List By Answer");
+    chartInfo = "answer";
+    chartInfoFillData();
   } else {
-    $("#toggleMode")
-      .removeClass("btn-info")
-      .addClass("btn-danger")
-      .html("Auto now");
-    autoRefresh = true;
-    worker();
-    $("#manualRefreshBtn").hide();
-    $(".dataButtons").hide();
+    $("#chartToggle").html("Toggle List By Name");
+    chartInfo = "name";
+    chartInfoFillData();
   }
 }
 
-let sChart = false;
-function showChart() {
-  if (sChart) {
-    $("#chart").hide();
-    $(".chartHeight").hide();
-    sChart = false;
-  } else {
-    sChart = true;
-    $("#chart").show();
-    $(".chartHeight").show();
-  }
+function chartInfoView() {
+  chartInfoDisplay = true;
+  togglePieChart = false;
+  $(".modal-body").removeClass("zeroPadding");
+  refreshChartInfo();
+  modal.style.display = "block";
+  $(".chartButton").show();
+}
+function refreshChartInfo() {
+  data.chartInfos = data.nameArray
+    .map(user =>
+      user.progress.find(({ QnLabel }) => chartInfoDataPoint == QnLabel)
+    )
+    .filter(value => value);
+  chartInfoFillData();
 }
 
+function chartInfoFillData() {
+  let message = "";
+  if (chartInfo == "name") {
+    message = `
+      <div class="row" style="font-weight: bold;text-align: center;">
+          <div class="col-4 breakword">Name</div>
+          <div class="col-6 breakword">Answer</div>
+          <div class="col-2 breakword">UR</div>
+      </div>`;
+    data.chartInfos.map((value, index) => {
+      message += `
+      <hr>
+      <div class="row" style="font-size: 0.8em;">
+        <div class="col-4 breakword tableCenter">${value.Name}</div>
+        <div class="col-6 breakword tableCenter">${value.Answer}</div>
+        <div class="col-2 breakword" style="display: flex;">
+          <div data-index ="${index}" onclick="tableResolve(this)" class="${
+        value.Code == "codeGreen"
+          ? "tableGreen"
+          : value.Code == "codeRed"
+          ? value.resolved
+            ? "tableResolvedRed"
+            : "tableUnresolvedRed"
+          : value.resolved
+          ? "tableResolvedOrange"
+          : "tableUnresolvedOrange"
+      }" style="border-radius: 50%; height: 20px; width: 20px; margin: auto;"></div>
+        </div>
+      </div>
+      `;
+    });
+  } else {
+    message = `
+      <div class="row" style="font-weight: bold;text-align: center;">
+          <div class="col-4 breakword">Number</div>
+          <div class="col-8 breakword">Answer</div>
+      </div>`;
+    [...new Set(data.chartInfos.map(({ Answer }) => Answer))]
+      .map(uniqueanswer => {
+        return {
+          number: data.chartInfos.filter(({ Answer }) => Answer == uniqueanswer)
+            .length,
+          uniqueanswer
+        };
+      })
+      .sort((a, b) => {
+        return a.number > b.number ? -1 : b.number > a.number ? 1 : 0;
+      })
+      .forEach(value => {
+        message += `
+      <hr>
+      <div class="row" style="font-size: 0.8em;">
+        <div class="col-4 breakword">${value.number}</div>
+        <div class="col-8 breakword">${value.uniqueanswer}</div>
+      </div>
+    `;
+      });
+  }
+  modal.querySelector(".modal-body").innerHTML = message;
+}
+
+//Pie Chart
 let togglePieChart = false;
 function pieChartToggle() {
   if (!togglePieChart) {
@@ -689,15 +906,17 @@ function pieChartToggle() {
 
     const piectx = document.getElementById("piechart").getContext("2d");
 
-    const uniqueanswer = [...new Set(chartInfos.map(({ answer }) => answer))];
-    console.log(uniqueanswer);
+    const uniqueanswer = [
+      ...new Set(data.chartInfos.map(({ Answer }) => Answer))
+    ];
+
     let answers = uniqueanswer
       .map(uniqueanswer => {
         return {
-          number: chartInfos.filter(({ answer }) => answer == uniqueanswer)
+          number: data.chartInfos.filter(({ Answer }) => Answer == uniqueanswer)
             .length,
           uniqueanswer,
-          code: chartInfos.find(s => s.answer == uniqueanswer).code
+          code: data.chartInfos.find(s => s.Answer == uniqueanswer).Code
         };
       })
       .sort((a, b) => {
@@ -710,8 +929,8 @@ function pieChartToggle() {
     const datasets = [
       {
         data: answers.map(({ number }) => number),
-        backgroundColor: answers.map(({ code }, index) => {
-          if (code == "codeGreen") return "#4baea0";
+        backgroundColor: answers.map(({ Code }, index) => {
+          if (Code == "codeGreen") return "#4baea0";
           else red = Math.floor(Math.random() * 175) + 50;
           return `rgb(254, ${red}, ${red})`;
         })
@@ -760,60 +979,84 @@ function pieChartToggle() {
     });
   } else {
     togglePieChart = false;
-    refreshChartInfo();
+    chartInfoView();
   }
 }
 
-//Slider Functions
-function dateToSeconds(date = new Date()) {
-  return getSeconds(date.getSeconds(), date.getMinutes(), date.getHours());
-}
-function getSeconds(seconds = 0, minutes = 0, hours = 0) {
-  return hours * 60 * 60 + minutes * 60 + seconds;
-}
-function formatTime(s) {
-  seconds = s % 60;
-  hours = Math.trunc(s / 60 / 60);
-  minutes = (s - hours * 60 * 60 - seconds) / 60;
-  return `${hours}:${minutes}:${seconds}`;
-}
-function formatTimeToHTML(date = new Date()) {
-  return date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
-}
-function secondsToDate(s) {
-  seconds = s % 60;
-  hours = Math.trunc(s / 60 / 60);
-  minutes = (s - hours * 60 * 60 - seconds) / 60;
-  return new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate(),
-    hours,
-    minutes,
-    seconds
-  );
-}
-
-slider.oninput = function() {
-  document.getElementById("sliderOutput").innerHTML = formatTime(this.value);
-  if (currentData) {
-    const to = secondsToDate(this.value);
-    historicalData = dataArrayToNames(currentData, to);
-    globalChartData = dataArrayToQnLabel(currentData, to);
-    chartView(globalChartData);
-    refreshView();
+//Resolve management
+let resolvedData = [];
+function tableResolve(event) {
+  const index = $(event).data("index");
+  const d = data.chartInfos[index];
+  function resolveD() {
+    data.dayData.map(data => (d == data ? (data.resolved = new Date()) : data));
+    d.resolved = new Date();
+    resolvedData.push({
+      date: currentDay
+        ? dt.dateToDateString(new Date())
+        : $("#dateSelection").val(),
+      data: d
+    });
+    data.refreshJasonView();
   }
-};
+  if (!d.resolved) {
+    if (d.Code == "codeRed") {
+      $(event)
+        .removeClass("tableUnresolvedRed")
+        .addClass("tableResolvedRed");
+      resolveD();
+    } else if (d.Code == "codeOrange") {
+      $(event)
+        .removeClass("tableUnresolvedOrange")
+        .addClass("tableResolvedOrange");
+      resolveD();
+    } else if (d.Code == "codeGreen") return;
+  }
+}
 
-//View
-function switchView() {}
+var clicks = 0;
+function dynamicFeedback() {
+  clicks++; // Issue with global clicks
+  if (clicks == 1) {
+    displayInfo = () => {
+      modal.querySelector(".modal-header h2").innerHTML = `${this.getAttribute(
+        "data-name"
+      )} - ${this.getAttribute("data-qn-label")}`;
 
-//Testing //Remove after testing
-hideInputs();
-checkForFirstDataStream();
+      modal.querySelector(".modal-body").innerHTML = this.getAttribute(
+        "data-answer"
+      );
+      $(".chartButton").hide();
+      modal.style.display = "block";
+      clicks = 0;
+    };
+    clickTimer = setTimeout(displayInfo, DOUBLECLICK_DELAY);
+  } else {
+    clearTimeout(clickTimer); // If double click, else show DisplayInfo
+    clicks = 0;
+  }
+}
 
+function resolveAlert(e) {
+  e.preventDefault();
+  if ($(this).hasClass("resolved")) return;
+  if ($(this).hasClass("codeOrange") || $(this).hasClass("codeRed")) {
+    $(this).addClass("resolved");
+    data.dayData[this.getAttribute("data-index-hist")].resolved = new Date();
+    resolvedData.push({
+      date: currentDay
+        ? dt.dateToDateString(new Date())
+        : $("#dateSelection").val(),
+      data: data.dayData[this.getAttribute("data-index-hist")]
+    });
+  }
+}
+
+const todayDate = dt.dateToDateString(new Date());
+
+// Exporting Functions Json and CSV
 function exportToJsonFile() {
-  let dataStr = JSON.stringify(currentData);
+  let dataStr = JSON.stringify(data.dayData);
   let dataUri =
     "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
   let exportFileDefaultName = "data.json";
@@ -824,13 +1067,14 @@ function exportToJsonFile() {
 }
 
 function exportToCSV() {
-  const changedData = currentData.map(value => {
+  const changedData = data.dayData.map(value => {
     return {
       Name: value.Name,
       QnLabel: value.QnLabel,
       Answer: value.Answer ? value.Answer : "",
       Code: value.Code ? value.Code : "",
-      HappendAt: value.HappendAt
+      HappendAt: value.HappendAt,
+      resolved: value.resolved ? value.resolved : ""
     };
   });
   const headers = {
@@ -838,7 +1082,8 @@ function exportToCSV() {
     QnLabel: "QnLabel",
     Answer: "Answer",
     Code: "Code",
-    HappendAt: "HappendAt"
+    HappendAt: "HappendAt",
+    resolved: "Resolved At"
   };
 
   if (headers) {
@@ -865,7 +1110,10 @@ function exportToCSV() {
     return str;
   })(jsonObject);
 
-  var exportedFilenmae = "coursedata  " + ".csv" || "export.csv";
+  var exportedFilenmae =
+    `coursedata${
+      currentDay ? dt.dateToDateString(new Date()) : $("#dateSelection").val()
+    }.csv` || "export.csv";
 
   var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   if (navigator.msSaveBlob) {
@@ -887,36 +1135,20 @@ function exportToCSV() {
   }
 }
 
-function tableResolve(event) {
-  const index = $(event).data("index");
-  const data = chartInfos[index];
-  console.log(data);
-  if (!data.resolved) {
-    if (data.code == "codeRed")
-      $(event)
-        .removeClass("tableUnresolvedRed")
-        .addClass("tableResolvedRed");
-    else if (data.code == "codeOrange")
-      $(event)
-        .removeClass("tableUnresolvedOrange")
-        .addClass("tableResolveddOrange");
-    else if (data.code == "codeGreen") return;
-    if (running) {
-      data.happendAt = new Date();
-      resolvedArray.push(data);
-    } else
-      for (i = 0; i < historicalData.length; i++) {
-        if (historicalData[i].name == data.name) {
-          for (y = 0; y < historicalData[i].progress.length; y++) {
-            const progress = historicalData[i].progress[y];
-            if (
-              progress.qnLabel == data.qnLabel &&
-              progress.happendAt == data.happendAt
-            )
-              progress.resolved = true;
-          }
-          break;
-        }
-      }
+function isEquivalent(a, b) {
+  var aProps = Object.getOwnPropertyNames(a);
+  var bProps = Object.getOwnPropertyNames(b);
+  if (aProps.length != bProps.length) return false;
+  for (var i = 0; i < aProps.length; i++) {
+    var propName = aProps[i];
+    if (a[propName] !== b[propName]) {
+      if (propName == "HappendAt") {
+        if (a[propName].getTime() !== b[propName].getTime()) return false;
+      } else return false;
+    }
   }
+  return true;
 }
+
+//Testing
+// $("#startButton").click();

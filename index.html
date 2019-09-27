@@ -9,22 +9,13 @@
     <meta name="author" content="">
     <title>METSAN: Resolutionary Lecturer Portal</title>
 
-    <!-- The core Firebase JS SDK is always required and must be listed first -->
-    <script src="/__/firebase/7.0.0/firebase-app.js"></script>
-
-    <!-- TODO: Add SDKs for Firebase products that you want to use
-     https://firebase.google.com/docs/web/setup#available-libraries -->
-
-    <!-- Initialize Firebase -->
-    <script src="/__/firebase/init.js"></script>
-
     <!-- Jquery -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
-
-    <!-- Jquery csv -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/1.0.5/jquery.csv.min.js"></script>
-
+	
+	<!-- Jquery csv -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/1.0.5/jquery.csv.min.js"></script>
+	
     <!-- Bootstrap core JavaScript -->
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
@@ -62,18 +53,16 @@
                     app.
                 </p>
                 <p>
-                    Input your surveyJS database id and access keyinto the fields below or upload a text file with the
-                    same credentials, click "Start", and you are good to go!
+                    Input your surveyJS database id and access keyinto the fields below or upload a text file with the same credentials, click "Start", and you are good to go!
                 </p>
                 <div>
                     <input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc" placeholder="dbID">
-                    <input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc"
-                        placeholder="accessKey">
+                    <input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc" placeholder="accessKey">
                     <button class="btn btn-primary btn-sm" id="startButton">Start</button>
                     <button class="btn btn-primary btn-sm" id="clearButton">Clear</button>
-                    <button class="btn btn-warning btn-sm" id="uploadButton"
-                        onclick="document.getElementById('files').click()">Upload</button>
-                    <input id="files" style="display:none;" type="file" name="files[]" multiple>
+					<button class="btn btn-warning btn-sm" id="uploadButton" 
+					onclick="document.getElementById('files').click()">Upload</button>
+					<input id="files" style="display:none;" type="file" name="files[]" multiple>	
                 </div>
                 <div id="firstLoading" style="display: none">Loading, Please wait while we retrieve your data...</div>
             </div>
@@ -106,14 +95,13 @@
                 <div class="row" id="buttons">
                     <div class="col-7">
                         <div style="float: left;">
-                            <!--
+						<!--
                             <button class="btn btn-success btn-sm" onclick="sortName()" id="sortName">Sort by Name
                                 (Descending)</button>
 								-->
                             <div style="display: flex; justify-content: space-between;">
-                                <button class="btn btn-success btn-sm" id="showChartBtn" onclick="showChart()">Show
-                                    Chart</button>
-                                <!--
+                                <button class="btn btn-success btn-sm" id="showChartBtn" onclick="showChart()">Show Chart</button>
+							<!--
                                 /
                                 <button class="btn btn-success btn-sm"
                                     onclick="data.refreshJasonView()">Default</button>
