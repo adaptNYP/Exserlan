@@ -62,6 +62,7 @@ function dynamicFeedback() {
 }
 
 function resolveAlert(e) {
+  console.log("asdas")
   e.preventDefault();
   if (!autoRefresh) {
     if ($(this).hasClass("codeOrange") || $(this).hasClass("codeRed")) {
@@ -608,7 +609,7 @@ function sortName() {
   refreshView();
 }
 
-hideInputs = () => {
+function hideInputs() {
   $("#landingJumbo").hide();
   $("#appRunningJumbo").show();
   $("#toggleMode")
