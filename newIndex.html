@@ -12,7 +12,10 @@
     <!-- Jquery -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
-
+	
+	<!-- Jquery csv -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/1.0.5/jquery.csv.min.js"></script>
+	
     <!-- Bootstrap core JavaScript -->
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
@@ -50,20 +53,16 @@
                     app.
                 </p>
                 <p>
-                    Input your surveyJS database id and access keyinto the fields below, click "Start", and you are good
-                    to go!
+                    Input your surveyJS database id and access keyinto the fields below or upload a text file with the same credentials, click "Start", and you are good to go!
                 </p>
                 <div>
                     <input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc" placeholder="dbID">
                     <input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc" placeholder="accessKey">
-                    <!-- <input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc" placeholder="dbID"
-                        value="89c190aa-9d8b-4d34-af41-61f602d54a9b"> -->
-                    <!-- <input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc" placeholder="dbID"
-                        value="2d109f03-72d2-4cd1-bcd2-e5e028c06ca9">
-                    <input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc"
-                        value="4d09c11a98484a91b9182b2f6bff76c9" placeholder="accessKey"> -->
                     <button class="btn btn-primary btn-sm" id="startButton">Start</button>
                     <button class="btn btn-primary btn-sm" id="clearButton">Clear</button>
+					<button class="btn btn-warning btn-sm" id="uploadButton" 
+					onclick="document.getElementById('files').click()">Upload</button>
+					<input id="files" style="display:none;" type="file" name="files[]" multiple>	
                 </div>
                 <div id="firstLoading" style="display: none">Loading, Please wait while we retrieve your data...</div>
             </div>
@@ -96,13 +95,17 @@
                 <div class="row" id="buttons">
                     <div class="col-7">
                         <div style="float: left;">
+						<!--
                             <button class="btn btn-success btn-sm" onclick="sortName()" id="sortName">Sort by Name
-                                (Dscending)</button>
+                                (Descending)</button>
+								-->
                             <div style="display: flex; justify-content: space-between;">
-                                <button class="btn btn-success btn-sm" onclick="showChart()">Show Chart</button>
+                                <button class="btn btn-success btn-sm" id="showChartBtn" onclick="showChart()">Show Chart</button>
+							<!--
                                 /
                                 <button class="btn btn-success btn-sm"
                                     onclick="data.refreshJasonView()">Default</button>
+									-->
                             </div>
                         </div>
                     </div>
