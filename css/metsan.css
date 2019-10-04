@@ -278,7 +278,7 @@ hr {
   padding: 0px 10px 10px 10px;
   position: fixed;
   display: block;
-  bottom: 30px;
+  bottom: -1px;
   width: 100%;
   background: #e9ecef;
 }
