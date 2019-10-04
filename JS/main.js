@@ -970,7 +970,7 @@ function pieChartToggle() {
                   var padding = 5;
                   var position = element.tooltipPosition();
                   ctx.fillText(
-                    Math.round((data / total) * 100 * 100) / 100 + "%",
+                    Math.round((data / total) * 100 * 100) + "%",
                     position.x,
                     position.y - 16 / 2 - padding
                   );
