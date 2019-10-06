@@ -205,10 +205,11 @@
         <div class="progressCell"></div>
     </template>
     <script>
-        window.addEventListener("load", () => {
+        window.addEventListener("load", function() {
+            console.log("loaded")
             const chartjs = document.createElement("script");
             chartjs.src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.min.js"
-            document.body.appendChild(css)
+            document.body.appendChild(chartjs)
             const chartcss = document.createElement("link");
             chartcss.href = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css"
             chartcss.rel = "stylesheet"
@@ -219,7 +220,7 @@
             document.body.appendChild(css)
             const main = document.createElement("script");
             main.src = "JS/main.js"
-            document.body.appendChild(script)
+            document.body.appendChild(main)
         })
     </script>
 </body>
