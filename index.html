@@ -10,27 +10,27 @@
     <title>METSAN: Resolutionary Lecturer Portal</title>
 
     <!-- Jquery -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
-	
-	<!-- Jquery csv -->
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/1.0.5/jquery.csv.min.js"></script>
-	
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js" defer></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js" defer></script>
+
+    <!-- Jquery csv -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/1.0.5/jquery.csv.min.js" defer></script>
+
     <!-- Bootstrap core JavaScript -->
-    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js" defer></script>
 
     <!-- Bootstrap core CSS -->
-    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" defer>
 
     <!-- Chart JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" rel="stylesheet" />
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" rel="stylesheet"/> -->
 
     <!-- Custom styles for this template -->
-    <link href="css/metsan.css" rel="stylesheet">
+    <!-- <link href="css/metsan.css" rel="stylesheet"> -->
 
     <!-- Custom JS -->
-    <script src="JS/main.js" async></script>
+    <!-- <script src="JS/main.js" async></script> -->
 </head>
 
 <body>
@@ -53,16 +53,18 @@
                     app.
                 </p>
                 <p>
-                    Input your surveyJS database id and access keyinto the fields below or upload a text file with the same credentials, click "Start", and you are good to go!
+                    Input your surveyJS database id and access keyinto the fields below or upload a text file with the
+                    same credentials, click "Start", and you are good to go!
                 </p>
                 <div>
                     <input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc" placeholder="dbID">
-                    <input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc" placeholder="accessKey">
+                    <input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc"
+                        placeholder="accessKey">
                     <button class="btn btn-primary btn-sm" id="startButton">Start</button>
                     <button class="btn btn-primary btn-sm" id="clearButton">Clear</button>
-					<button class="btn btn-warning btn-sm" id="uploadButton" 
-					onclick="document.getElementById('files').click()">Upload</button>
-					<input id="files" style="display:none;" type="file" name="files[]" multiple>	
+                    <button class="btn btn-warning btn-sm" id="uploadButton"
+                        onclick="document.getElementById('files').click()">Upload</button>
+                    <input id="files" style="display:none;" type="file" name="files[]" multiple>
                 </div>
                 <div id="firstLoading" style="display: none">Loading, Please wait while we retrieve your data...</div>
             </div>
@@ -95,13 +97,14 @@
                 <div class="row" id="buttons">
                     <div class="col-7">
                         <div style="float: left;">
-						<!--
+                            <!--
                             <button class="btn btn-success btn-sm" onclick="sortName()" id="sortName">Sort by Name
                                 (Descending)</button>
 								-->
                             <div style="display: flex; justify-content: space-between;">
-                                <button class="btn btn-success btn-sm" id="showChartBtn" onclick="showChart()">Show Chart</button>
-							<!--
+                                <button class="btn btn-success btn-sm" id="showChartBtn" onclick="showChart()">Show
+                                    Chart</button>
+                                <!--
                                 /
                                 <button class="btn btn-success btn-sm"
                                     onclick="data.refreshJasonView()">Default</button>
@@ -201,6 +204,24 @@
     <template id="cellTemplate">
         <div class="progressCell"></div>
     </template>
+    <script>
+        window.addEventListener("load", () => {
+            const chartjs = document.createElement("script");
+            chartjs.src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.min.js"
+            document.body.appendChild(css)
+            const chartcss = document.createElement("link");
+            chartcss.href = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css"
+            chartcss.rel = "stylesheet"
+            document.body.appendChild(chartcss)
+            const css = document.createElement("link");
+            css.href = "css/metsan.css"
+            css.rel = "stylesheet"
+            document.body.appendChild(css)
+            const main = document.createElement("script");
+            main.src = "JS/main.js"
+            document.body.appendChild(script)
+        })
+    </script>
 </body>
 
 </html>

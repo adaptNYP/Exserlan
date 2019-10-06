@@ -273,6 +273,7 @@ function changeDate(evt) {
   changeDateVariable = true;
   sChart = false;
   $(".chartHeight").hide();
+  $("#showChartBtn").text("Show Chart");
   data.setDate(new Date(evt.options[evt.selectedIndex].text));
 }
 
@@ -913,7 +914,7 @@ function pieChartToggle() {
     const uniqueanswer = [
       ...new Set(data.chartInfos.map(({ Answer }) => Answer))
     ];
-
+    console.log(data.chartInfos)
     let answers = uniqueanswer
       .map(uniqueanswer => {
         return {
@@ -933,8 +934,8 @@ function pieChartToggle() {
     const datasets = [
       {
         data: answers.map(({ number }) => number),
-        backgroundColor: answers.map(({ Code }, index) => {
-          if (Code == "codeGreen") return "#4baea0";
+        backgroundColor: answers.map(({ code }) => {
+          if (code == "codeGreen") return "#4baea0";
           else red = Math.floor(Math.random() * 175) + 50;
           return `rgb(254, ${red}, ${red})`;
         })
@@ -970,8 +971,8 @@ function pieChartToggle() {
                   var padding = 5;
                   var position = element.tooltipPosition();
                   ctx.fillText(
-                    Math.round((data / total) * 100 * 100) + "%",
-                    position.x,
+                    Math.round((data / total) * 100) + "%",
+                    position.x - 12,
                     position.y - 16 / 2 - padding
                   );
                 }
