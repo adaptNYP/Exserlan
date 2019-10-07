@@ -109,11 +109,7 @@ var modal = document.getElementById("myModal");
 span.onclick = () => {
   modal.style.display = "none";
   chartInfoDisplay = false;
-};
 
-window.onclick = event => {
-  event.target == modal ? (modal.style.display = "none") : "";
-  chartInfoDisplay = false;
 };
 
 function useMe(evt) {
@@ -464,7 +460,7 @@ const data = new (class {
     this.refreshJasonView();
     if (sChart) {
       this.runChartView();
-      if (refreshChartInfo) refreshChartInfo();
+      if (chartInfoDisplay) refreshChartInfo();
     }
   }
   runChartView() {
@@ -829,13 +825,18 @@ function chartInfoView() {
   modal.style.display = "block";
   $(".chartButton").show();
 }
+
 function refreshChartInfo() {
+  console.log("Refresh Chart Info");
   data.chartInfos = data.nameArray
     .map(user =>
       user.progress.find(({ QnLabel }) => chartInfoDataPoint == QnLabel)
     )
     .filter(value => value);
-  chartInfoFillData();
+  if (togglePieChart) {
+    togglePieChart = false;
+    pieChartToggle();
+  } else chartInfoFillData();
 }
 
 function chartInfoFillData() {
@@ -989,6 +990,7 @@ function chartInfoFillData() {
 let togglePieChart = false;
 function pieChartToggle() {
   if (!togglePieChart) {
+    console.log("Toggle piechart");
     togglePieChart = true;
     modal.querySelector(
       ".modal-body"
