@@ -130,9 +130,19 @@ $("#clearButton").click(() => {
   $("#surveyJSDBaccessKey").val("");
 });
 
-$("#stopButton").click(() => {
-  clearInterval(refreshInterval);
-  refreshInterval = null;
+let rb = "Stop";
+$("#toggleStopStartButton").click(() => {
+  if (rb == "Stop") {
+    clearInterval(refreshInterval);
+    refreshInterval = null;
+    rb = "Start";
+    $("#runningtext").text("Has Stopped");
+  } else {
+    runRefeshInterval();
+    rb = "Stop";
+    $("#runningtext").text("Is Running");
+  }
+  $("#toggleStopStartButton").text(rb);
 });
 
 slider.oninput = function() {
