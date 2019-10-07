@@ -109,7 +109,6 @@ var modal = document.getElementById("myModal");
 span.onclick = () => {
   modal.style.display = "none";
   chartInfoDisplay = false;
-
 };
 
 function useMe(evt) {
@@ -481,21 +480,25 @@ const data = new (class {
     );
   }
   arrayByNames(a, time = new Date(), sortNameBy) {
-    let newArray = [...new Set(a.map(({ Name }) => Name))].map(name => {
-      let c = a.filter(
-        ({ Name, HappendAt }) => name == Name && HappendAt <= time
-      );
-      return {
-        name,
-        progress: this.arraySortString(
-          [...new Set(c.map(({ QnLabel }) => QnLabel))].map(QnLabel =>
-            c.find(s => s.QnLabel == QnLabel)
-          ),
-          "QnLabel"
-        )
-      };
-    });
-    if (!sortNameBy) return newArray;
+    let newArray = [...new Set(a.map(({ Name }) => Name))]
+      .map(name => {
+        let c = a.filter(
+          ({ Name, HappendAt }) => name == Name && HappendAt <= time
+        );
+        let userQnLabels = [...new Set(c.map(({ QnLabel }) => QnLabel))].map(
+          QnLabel => c.find(s => s.QnLabel == QnLabel)
+        );
+        let progress = this.arraySortString(userQnLabels, "QnLabel");
+        return {
+          name,
+          progress,
+          latest: Math.max(...userQnLabels.map(({ HappendAt }) => HappendAt))
+        };
+      })
+      .filter(({ progress }) => progress.length != 0);
+
+    if (!sortNameBy)
+      return this.arraySortString(newArray, "latest", sortNameBy);
     return this.arraySortString(newArray, "name", sortNameBy);
   }
   arrayByQnLabel(a, time = new Date()) {
