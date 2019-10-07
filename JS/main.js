@@ -514,7 +514,7 @@ const data = new (class {
           type: !c.find(s => s.Code || s.Answer)
             ? "MS" //Milestone
             : !c.find(s => s.Code)
-            ? "FA" //Free Answer
+            ? "FR" //Free Response
             : !c.find(s => s.Answer)
             ? "TL" //Traffic Light
             : ""
@@ -724,7 +724,7 @@ function chartView(chartData) {
       codeGreen.push(0);
       codeOrange.push(0);
       codeRed.push(0);
-    } else if (type == "FA") {
+    } else if (type == "FR") {
       green.push(0);
       red.push(0);
       milestone.push(0);
@@ -839,63 +839,149 @@ function refreshChartInfo() {
 }
 
 function chartInfoFillData() {
+  const questionType = data.qnLabelArray.find(
+    ({ QnLabel }) => QnLabel == data.chartInfos[0].QnLabel
+  ).type;
   let message = "";
-  if (chartInfo == "name") {
-    message = `
-      <div class="row" style="font-weight: bold;text-align: center;">
-          <div class="col-4 breakword">Name</div>
-          <div class="col-6 breakword">Answer</div>
-          <div class="col-2 breakword">UR</div>
-      </div>`;
-    data.chartInfos.map((value, index) => {
-      message += `
-      <hr>
-      <div class="row" style="font-size: 0.8em;">
-        <div class="col-4 breakword tableCenter">${value.Name}</div>
-        <div class="col-6 breakword tableCenter">${value.Answer}</div>
-        <div class="col-2 breakword" style="display: flex;">
-          <div data-index ="${index}" onclick="tableResolve(this)" class="${
-        value.Code == "codeGreen"
-          ? "tableGreen"
-          : value.Code == "codeRed"
-          ? value.resolved
-            ? "tableResolvedRed"
-            : "tableUnresolvedRed"
-          : value.resolved
-          ? "tableResolvedOrange"
-          : "tableUnresolvedOrange"
-      }" style="border-radius: 50%; height: 20px; width: 20px; margin: auto;"></div>
-        </div>
-      </div>
-      `;
-    });
-  } else {
-    message = `
-      <div class="row" style="font-weight: bold;text-align: center;">
-          <div class="col-4 breakword">Number</div>
-          <div class="col-8 breakword">Answer</div>
-      </div>`;
-    [...new Set(data.chartInfos.map(({ Answer }) => Answer))]
-      .map(uniqueanswer => {
-        return {
-          number: data.chartInfos.filter(({ Answer }) => Answer == uniqueanswer)
-            .length,
-          uniqueanswer
-        };
-      })
-      .sort((a, b) => {
-        return a.number > b.number ? -1 : b.number > a.number ? 1 : 0;
-      })
-      .forEach(value => {
+
+  if (questionType == "TL") {
+    if (chartInfo == "name") {
+      message = `
+    <div class="row" style="font-weight: bold;text-align: center;">
+        <div class="col-6 breakword">Name</div>
+        <div class="col-6 breakword">UR</div>
+    </div>`;
+      data.chartInfos.map((value, index) => {
         message += `
       <hr>
       <div class="row" style="font-size: 0.8em;">
-        <div class="col-4 breakword">${value.number}</div>
-        <div class="col-8 breakword">${value.uniqueanswer}</div>
+        <div class="col-6 breakword tableCenter">${value.Name}</div>
+        <div class="col-6 breakword" style="display: flex;">
+          <div data-index ="${index}" onclick="tableResolve(this)" class="${
+          value.Code == "codeGreen"
+            ? "tableGreen"
+            : value.Code == "codeRed"
+            ? value.resolved
+              ? "tableResolvedRed"
+              : "tableUnresolvedRed"
+            : value.resolved
+            ? "tableResolvedOrange"
+            : "tableUnresolvedOrange"
+        }" style="border-radius: 50%; height: 20px; width: 20px; margin: auto;"></div>
+        </div>
       </div>
-    `;
+      `;
       });
+    } else {
+      message = `
+      <div class="row" style="font-weight: bold;text-align: center;">
+          <div class="col-4 breakword">Number</div>
+          <div class="col-8 breakword">Code</div>
+      </div>`;
+      ["codeGreen", "codeOrange", "codeRed"]
+        .map(uniquecode => {
+          return {
+            uniquecode,
+            number: data.chartInfos.filter(({ Code }) => Code == uniquecode)
+              .length
+          };
+        })
+        .filter(({ number }) => number != 0)
+        .forEach(value => {
+          message += `
+          <hr>
+          <div class="row" style="font-size: 0.8em;">
+            <div class="col-4 breakword">${value.number}</div>
+            <div class="col-8 breakword">${value.uniquecode}</div>
+          </div>
+        `;
+        });
+    }
+  } else if (questionType == "MS") {
+    if (chartInfo == "name") {
+      message = `
+    <div class="row" style="font-weight: bold;text-align: center;">
+        <div class="col-12 breakword">Name</div>
+    </div>`;
+      data.chartInfos.map(({ Name }) => {
+        message += `
+      <hr>
+      <div class="row" style="font-size: 0.8em;">
+        <div class="col-12 breakword tableCenter">${Name}</div>
+      </div>
+      `;
+      });
+    } else {
+      message = `
+      <div class="row" style="font-weight: bold;text-align: center;">
+          <div class="col-12 breakword">Number</div>
+      </div>
+      <hr>
+      <div class="row" style="font-size: 0.8em;">
+        <div class="col-12 breakword">${data.chartInfos.length}</div>
+      </div>
+        `;
+    }
+  } else {
+    if (chartInfo == "name") {
+      message = `
+        <div class="row" style="font-weight: bold;text-align: center;">
+            <div class="col-4 breakword">Name</div>
+            <div class="col-6 breakword">Answer</div>
+            <div class="col-2 breakword">UR</div>
+        </div>`;
+      data.chartInfos.map((value, index) => {
+        message += `
+        <hr>
+        <div class="row" style="font-size: 0.8em;">
+          <div class="col-4 breakword tableCenter">${value.Name}</div>
+          <div class="col-6 breakword tableCenter">${value.Answer}</div>
+          <div class="col-2 breakword" style="display: flex;">
+            <div data-index ="${index}" onclick="tableResolve(this)" class="${
+          value.Code == "codeGreen"
+            ? "tableGreen"
+            : value.Code == "codeRed"
+            ? value.resolved
+              ? "tableResolvedRed"
+              : "tableUnresolvedRed"
+            : value.resolved
+            ? "tableResolvedOrange"
+            : "tableUnresolvedOrange"
+        }" style="border-radius: 50%; height: 20px; width: 20px; margin: auto;"></div>
+          </div>
+        </div>
+        `;
+      });
+    } else {
+      message = `
+        <div class="row" style="font-weight: bold;text-align: center;">
+            <div class="col-4 breakword">Number</div>
+            <div class="col-8 breakword">Answer</div>
+        </div>`;
+      [...new Set(data.chartInfos.map(({ Answer }) => Answer))]
+        .map(uniqueanswer => {
+          return {
+            number: data.chartInfos.filter(
+              ({ Answer }) => Answer == uniqueanswer
+            ).length,
+            uniqueanswer
+          };
+        })
+        .sort((a, b) => {
+          return a.number > b.number ? -1 : b.number > a.number ? 1 : 0;
+        })
+        .forEach(value => {
+          message += `
+        <hr>
+        <div class="row" style="font-size: 0.8em;">
+          <div class="col-4 breakword">${value.number}</div>
+          <div class="col-8 breakword">${value.uniqueanswer}</div>
+        </div>
+      `;
+        });
+    }
   }
+
   modal.querySelector(".modal-body").innerHTML = message;
 }
 
@@ -911,41 +997,91 @@ function pieChartToggle() {
 
     const piectx = document.getElementById("piechart").getContext("2d");
 
-    const uniqueanswer = [
-      ...new Set(data.chartInfos.map(({ Answer }) => Answer))
-    ];
-    console.log(data.chartInfos)
-    let answers = uniqueanswer
-      .map(uniqueanswer => {
-        return {
-          number: data.chartInfos.filter(({ Answer }) => Answer == uniqueanswer)
-            .length,
-          uniqueanswer,
-          code: data.chartInfos.find(s => s.Answer == uniqueanswer).Code
-        };
-      })
-      .sort((a, b) => {
-        return a.number > b.number ? -1 : b.number > a.number ? 1 : 0;
-      });
-    const total = answers
-      .map(({ number }) => number)
-      .reduce((a, b) => a + b, 0);
+    const questionType = data.qnLabelArray.find(
+      ({ QnLabel }) => QnLabel == data.chartInfos[0].QnLabel
+    ).type;
 
-    const datasets = [
-      {
-        data: answers.map(({ number }) => number),
-        backgroundColor: answers.map(({ code }) => {
-          if (code == "codeGreen") return "#4baea0";
-          else red = Math.floor(Math.random() * 175) + 50;
-          return `rgb(254, ${red}, ${red})`;
+    let backgroundColor;
+
+    let answers;
+    const total = data.chartInfos.length;
+
+    if (questionType == "TL") {
+      answers = [...new Set(data.chartInfos.map(({ Code }) => Code))].map(
+        uniqueanswer => {
+          return {
+            number: data.chartInfos.filter(({ Code }) => Code == uniqueanswer)
+              .length,
+            uniqueanswer
+          };
+        }
+      );
+      backgroundColor = answers.map(({ uniqueanswer }) => {
+        switch (uniqueanswer) {
+          case "codeGreen":
+            return "#77dd77";
+          case "codeOrange":
+            return "#ffb347";
+          case "codeRed":
+            return "#ff6961";
+        }
+      });
+    } else if (questionType == "MS") {
+      answers = [
+        {
+          number: data.chartInfos.length,
+          uniqueanswer: "Milestone"
+        }
+      ];
+      backgroundColor = ["grey"];
+    } else if (questionType == "FR") {
+      answers = [...new Set(data.chartInfos.map(({ Answer }) => Answer))]
+        .map(uniqueanswer => {
+          return {
+            number: data.chartInfos.filter(
+              ({ Answer }) => Answer == uniqueanswer
+            ).length,
+            uniqueanswer
+          };
         })
-      }
-    ];
+        .sort((a, b) => {
+          return a.number > b.number ? -1 : b.number > a.number ? 1 : 0;
+        });
+      backgroundColor = answers.map(() => {
+        const color = Math.round(Math.random() * 255);
+        return `rgb(${color}, ${Math.round(Math.random() * 255)}, ${color})`;
+      });
+    } else {
+      //MCQ or Text
+      answers = [...new Set(data.chartInfos.map(({ Answer }) => Answer))]
+        .map(uniqueanswer => {
+          return {
+            number: data.chartInfos.filter(
+              ({ Answer }) => Answer == uniqueanswer
+            ).length,
+            uniqueanswer,
+            code: data.chartInfos.find(s => s.Answer == uniqueanswer).Code
+          };
+        })
+        .sort((a, b) => {
+          return a.number > b.number ? -1 : b.number > a.number ? 1 : 0;
+        });
+      backgroundColor = answers.map(({ code, number }) => {
+        if (code == "codeGreen") return "#4baea0";
+        else red = (1 - number / total) * 150;
+        return `rgb(254, ${red}, ${red})`;
+      });
+    }
 
     new Chart(piectx, {
       type: "pie",
       data: {
-        datasets,
+        datasets: [
+          {
+            data: answers.map(({ number }) => number),
+            backgroundColor
+          }
+        ],
         labels: answers.map(({ uniqueanswer }) => uniqueanswer)
       },
       options: {
