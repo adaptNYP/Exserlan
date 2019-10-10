@@ -506,9 +506,8 @@ const data = new (class {
         };
       })
       .filter(({ progress }) => progress.length != 0);
-
     if (!sortNameBy)
-      return this.arraySortString(newArray, "latest", sortNameBy);
+      return this.arraySortString(newArray, "latest", "asc");
     return this.arraySortString(newArray, "name", sortNameBy);
   }
   arrayByQnLabel(a, time = new Date()) {
