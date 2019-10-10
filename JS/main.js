@@ -478,6 +478,7 @@ const data = new (class {
     chartView(this.qnLabelArray);
   }
   refreshJasonView() {
+    this.qnLabelArray = this.arrayByQnLabel(this.dayData, this.dateHolder);
     this.nameArray = this.arrayByNames(this.dayData, this.dateHolder);
     jasonView(this.nameArray);
   }
@@ -498,7 +499,8 @@ const data = new (class {
         let userQnLabels = [...new Set(c.map(({ QnLabel }) => QnLabel))].map(
           QnLabel => c.find(s => s.QnLabel == QnLabel)
         );
-        let progress = this.arraySortString(userQnLabels, "QnLabel");
+        // let progress = this.arraySortString(userQnLabels, "QnLabel");
+        let progress = userQnLabels;
         return {
           name,
           progress,
@@ -506,8 +508,7 @@ const data = new (class {
         };
       })
       .filter(({ progress }) => progress.length != 0);
-    if (!sortNameBy)
-      return this.arraySortString(newArray, "latest", "asc");
+    if (!sortNameBy) return this.arraySortString(newArray, "latest", "asc");
     return this.arraySortString(newArray, "name", sortNameBy);
   }
   arrayByQnLabel(a, time = new Date()) {
@@ -584,50 +585,53 @@ const dt = new (class {
 //Name View
 function jasonView(a) {
   $("#studentsProgress").html("");
-  if ("content" in document.createElement("template")) {
+  if (document.createElement("template").content) {
     a.forEach(({ name, progress }) => {
-      var studentTemplate = document.querySelector("#studentTemplate");
-      var studentRow = document.importNode(studentTemplate.content, true);
-      studentRow.querySelector(".studentName").innerHTML = name;
+      var student = document
+        .getElementById("studentTemplate")
+        .content.cloneNode(true);
+      student.querySelector(".studentName").innerHTML = name;
       progress.forEach(d => {
         const { QnLabel, Answer, Code, resolved } = d;
-        var cellTemplate = document.querySelector("#cellTemplate");
-        var cloneCell = document.importNode(cellTemplate.content, true);
-        cloneCell.querySelector(".progressCell").dataset.name = name;
-        cloneCell.querySelector(".progressCell").innerHTML = QnLabel;
-        cloneCell.querySelector(".progressCell").dataset.qnLabel = QnLabel;
-        cloneCell.querySelector(
-          ".progressCell"
-        ).dataset.indexHist = data.dayData.findIndex(dd => d == dd);
-        cloneCell
-          .querySelector(".progressCell")
-          .classList.add(
-            (() =>
-              ["A", "B", "C", "D"]
-                .filter(value => value == QnLabel.charAt(0))
-                .map(value => `class${value}`)[0])()
-          );
-        if (!(typeof Code === "undefined") && Code) {
-          cloneCell.querySelector(".progressCell").classList.add(Code);
-          cloneCell.querySelector(".progressCell").dataset.code = Code;
+        var cell = document
+          .getElementById("cellTemplate")
+          .content.cloneNode(true)
+          .querySelector(".progressCell");
+        cell.innerHTML = QnLabel;
+        cell.dataset.name = name;
+        cell.dataset.qnLabel = QnLabel;
+        cell.dataset.indexHist = data.dayData.findIndex(dd => d == dd);
+        var type = data.qnLabelArray.find(qn => qn.QnLabel == QnLabel).type;
+        switch (type) {
+          case "TL":
+            var cl = `cell${Code}`;
+            cell.classList.add(cl);
+            if (!resolved && Code != "codeGreen")
+              cell.classList.add(`${cl}Unresolved`);
+            break;
+          case "MS":
+            cell.classList.add("cellMilestone");
+            break;
+          case "FR":
+            cell.classList.add("cellFreeResponse");
+            break;
+          default:
+            if (Code == "codeGreen") cell.classList.add("cellCorrect");
+            else {
+              cell.classList.add("cellWrong");
+              if (!resolved) cell.classList.add("cellWrongUnresolved");
+            }
+            break;
         }
-        if (!(typeof Answer === "undefined") && Answer) {
-          cloneCell
-            .querySelector(".progressCell")
-            .classList.add("feedbackCell");
-          cloneCell.querySelector(".progressCell").dataset.answer = Answer;
+        if (Answer) {
+          cell.classList.add("feedbackCell");
+          cell.dataset.answer = Answer;
+          cell.onclick = dynamicFeedback;
         }
-        if (!(typeof resolved === "undefined") && resolved)
-          cloneCell.querySelector(".progressCell").classList.add("resolved");
-        studentRow.querySelector(".cellBody").appendChild(cloneCell);
-        $(studentRow)
-          .find(".feedbackCell:last-child")
-          .click(dynamicFeedback);
-        $(studentRow)
-          .find(".progressCell:last-child")
-          .dblclick(resolveAlert);
+        if (!resolved) cell.ondblclick = resolveAlert;
+        student.querySelector(".cellBody").appendChild(cell);
       });
-      document.getElementById("studentsProgress").appendChild(studentRow);
+      document.getElementById("studentsProgress").appendChild(student);
     });
   } else console.log("Template doesn't work");
 }
@@ -1195,7 +1199,11 @@ function dynamicFeedback() {
 function resolveAlert(e) {
   e.preventDefault();
   if ($(this).hasClass("resolved")) return;
-  if ($(this).hasClass("codeOrange") || $(this).hasClass("codeRed")) {
+  if (
+    $(this).hasClass("cellcodeOrangeUnresolved") ||
+    $(this).hasClass("cellcodeRedUnresolved") ||
+    $(this).hasClass("cellWrong")
+  ) {
     $(this).addClass("resolved");
     data.dayData[this.getAttribute("data-index-hist")].resolved = new Date();
     resolvedData.push({

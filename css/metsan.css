@@ -100,7 +100,7 @@ body {
 }
 
 .resolved {
-  border-style: dotted;
+  background-color: transparent !important;
 }
 
 /* The Modal (background) */
@@ -291,4 +291,48 @@ hr {
 
 .runningPage {
   display: none;
+}
+
+.cellCorrect {
+  border-color: #008000; /* Green */
+  background-color: #ccffcc;
+}
+
+.cellWrong {
+  border-color: #ff0000; /* Red */
+}
+
+.cellWrongUnresolved {
+  background-color: #ffcccc;
+}
+
+.cellMilestone {
+  border-color: #808080; /* Grey */
+  background-color: #d9d9d9;
+}
+
+.cellFreeResponse {
+  border-color: #007fff;
+  background-color: #cce6ff;
+}
+
+.cellcodeRed {
+  border-color: #ff6961;
+}
+
+.cellcodeRedUnresolved {
+  background-color: #ffdbd9;
+}
+
+.cellcodeOrange {
+  border-color: #ffb347;
+}
+
+.cellcodeOrangeUnresolved {
+  background-color: #ffefd9;
+}
+
+.cellcodeGreen {
+  border-color: #77dd77;
+  background-color: #bddebd;
 }
