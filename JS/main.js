@@ -862,7 +862,7 @@ function chartInfoFillData() {
       message = `
     <div class="row" style="font-weight: bold;text-align: center;">
         <div class="col-6 breakword">Name</div>
-        <div class="col-6 breakword">UR</div>
+        <div class="col-6 breakword">Status</div>
     </div>`;
       data.chartInfos.map((value, index) => {
         message += `
@@ -940,16 +940,16 @@ function chartInfoFillData() {
       message = `
         <div class="row" style="font-weight: bold;text-align: center;">
             <div class="col-4 breakword">Name</div>
-            <div class="col-6 breakword">Answer</div>
-            <div class="col-2 breakword">UR</div>
+            <div class="col-5 breakword">Answer</div>
+            <div class="col-3 breakword">Status</div>
         </div>`;
       data.chartInfos.map((value, index) => {
         message += `
         <hr>
         <div class="row" style="font-size: 0.8em;">
           <div class="col-4 breakword tableCenter">${value.Name}</div>
-          <div class="col-6 breakword tableCenter">${value.Answer}</div>
-          <div class="col-2 breakword" style="display: flex;">
+          <div class="col-5 breakword tableCenter">${value.Answer}</div>
+          <div class="col-3 breakword" style="display: flex;">
             <div data-index ="${index}" onclick="tableResolve(this)" class="${
           value.Code == "codeGreen"
             ? "tableGreen"
