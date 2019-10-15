@@ -726,7 +726,6 @@ function chartView(chartData) {
     codeGreen = [],
     codeOrange = [],
     codeRed = [];
-
   chartData.forEach(({ data, type }) => {
     if (type == "MS") {
       green.push(0);
@@ -754,8 +753,7 @@ function chartView(chartData) {
       milestone.push(0);
       freeText.push(0);
       codeGreen.push(
-        data.filter(({ Code, Answer }) => Code == "codeOrange" && !Answer)
-          .length
+        data.filter(({ Code, Answer }) => Code == "codeGreen" && !Answer).length
       );
       codeOrange.push(data.filter(({ Code }) => Code == "codeOrange").length);
       codeRed.push(
