@@ -53,12 +53,14 @@
                     system.
                 </p>
                 <p>
-                    Input your surveyJS database id and access keyinto the fields below or upload a text file with the same credentials, click "Start", and you are good to go!
+                    Input your surveyJS database id and access keyinto the fields below or upload a text file with the
+                    same credentials, click "Start", and you are good to go!
                 </p>
                 <div>
-                    <input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc" placeholder="dbID">
+                    <input type="text" size="10" id="name" style="background-color: rgb(156, 231, 206)" placeholder=" name">
+                    <input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc" placeholder=" dbID">
                     <input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc"
-                        placeholder="accessKey">
+                        placeholder=" accessKey">
                     <button class="btn btn-primary btn-sm" id="startButton">Start</button>
                     <button class="btn btn-primary btn-sm" id="clearButton">Clear</button>
                     <button class="btn btn-warning btn-sm" id="uploadButton"
@@ -126,9 +128,8 @@
         <!-- dbID and accessKey Holder -->
         <div class="firstPage" id="keyRowList" style="display: none">
             <div id="firstKeyRow" class="row">
-                <div class="col-5">dbID</div>
-                <div class="col-5">dbaccessKey</div>
-                <div class="col-2 nopadding" style="display: flex">
+                <div class="col-9">Name</div>
+                <div class="col-3 nopadding" style="display: flex">
                     <button class="btn btn-primary btn-sm" id="clearID" style="margin: auto;">Clear</button>
                 </div>
             </div>
