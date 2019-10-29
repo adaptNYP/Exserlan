@@ -480,6 +480,7 @@ const data = new (class {
     console.log('run chart');
     this.qnLabelArray = this.arrayByQnLabel(this.dayData, this.dateHolder);
     chartView(this.qnLabelArray);
+    if (sChart) $('#mainChart').collapse('show');
   }
   refreshJasonView() {
     this.qnLabelArray = this.arrayByQnLabel(this.dayData, this.dateHolder);
@@ -655,16 +656,11 @@ function sortName() {
 }
 
 //Chart
-let sChart = false;
+let sChart = true;
 function showChart() {
-  if (sChart) {
-    $('.chartHeight').hide();
-    $('#showChartBtn').text('Show Chart');
-    sChart = false;
-  } else {
+  if (sChart) sChart = false;
+  else {
     sChart = true;
-    $('.chartHeight').show();
-    $('#showChartBtn').text('Hide Chart');
     data.runChartView();
   }
 }
@@ -1316,4 +1312,4 @@ function isEquivalent(a, b) {
 }
 
 //Testing
-// $("#startButton").click();
+$('#startButton').click();
