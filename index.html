@@ -62,7 +62,7 @@
                     <input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc"
                         placeholder=" dbID">
                     <input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc"
-                        placeholder=" accessKey">
+                        value="4d09c11a98484a91b9182b2f6bff76c9" placeholder=" accessKey">
                     <button class="btn btn-primary btn-sm" id="startButton">Start</button>
                     <button class="btn btn-primary btn-sm" id="clearButton">Clear</button>
                     <button class="btn btn-warning btn-sm" id="uploadButton"
@@ -99,20 +99,18 @@
                 </div>
                 <div class="row" id="buttons">
                     <div class="col-7">
-                        <div style="float: left;">
-                            <!--
-                            <button class="btn btn-success btn-sm" onclick="sortName()" id="sortName">Sort by Name
-                                (Descending)</button>
-								-->
-                            <div style="display: flex; justify-content: space-between;">
-                                <button class="btn btn-success btn-sm" id="showChartBtn" onclick="showChart()">Show
-                                    Chart</button>
-                                <!--
-                                /
-                                <button class="btn btn-success btn-sm"
-                                    onclick="data.refreshJasonView()">Default</button>
-									-->
-                            </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <button type="button"
+                                style="background-color: transparent; border-color: transparent; padding: 0;"
+                                class="btn btn-light">Show:</button>
+                            <button class="btn btn-success btn-sm" id="showChartBtn" data-toggle="collapse"
+                                data-target="#mainChart" aria-expanded="true" aria-controls="mainChart"
+                                onclick="showChart(); $(this).toggleClass('btn-success btn-danger');">
+                                Chart</button>
+                            <button class="btn btn-danger btn-sm" id="showStudentBtn" data-toggle="collapse"
+                                data-target="#studentsProgress" aria-expanded="false" aria-controls="studentsProgress"
+                                onclick="$(this).toggleClass('btn-success btn-danger');">
+                                Student</button>
                         </div>
                     </div>
                     <div class="col-5">
@@ -138,10 +136,10 @@
         </div>
 
         <!-- runningPage -->
-        <div class="chartHeight" style="display: none">
+        <div class="chartHeight collapse" id="mainChart">
             <canvas id="chart"></canvas>
         </div>
-        <div id="studentsProgress">
+        <div class="collapse" id="studentsProgress">
             <p>Awaiting input...</p>
         </div>
     </div>
