@@ -765,45 +765,47 @@ function chartView(chartData) {
       );
     }
   });
+  const ls = [
+    'Correct',
+    'Wrong',
+    'CodeGreen',
+    'CodeOrange',
+    'CodeRed ',
+    'Milestone',
+    'Free Response'
+  ];
+  const backkgroundcolors = [
+    'green',
+    'red',
+    '#77dd77',
+    '#ffb347',
+    '#ff6961',
+    'grey',
+    '#007fff'
+  ];
+  const datas = [
+    green,
+    red,
+    codeGreen,
+    codeOrange,
+    codeRed,
+    milestone,
+    freeText
+  ];
+  $('.chartHeight').css('height', chartData.length * 70 + 110);
   myChart.data = {
     labels: chartData.map(({ QnLabel }) => QnLabel),
-    datasets: [
-      {
-        label: 'Correct',
-        backgroundColor: 'green',
-        data: green
-      },
-      {
-        label: 'Wrong',
-        backgroundColor: 'red',
-        data: red
-      },
-      {
-        label: 'CodeGreen',
-        backgroundColor: '#77dd77',
-        data: codeGreen
-      },
-      {
-        label: 'CodeOrange',
-        backgroundColor: '#ffb347',
-        data: codeOrange
-      },
-      {
-        label: 'CodeRed ',
-        backgroundColor: '#ff6961',
-        data: codeRed
-      },
-      {
-        label: 'Milestone',
-        backgroundColor: 'grey',
-        data: milestone
-      },
-      {
-        label: 'Free Response',
-        backgroundColor: '#007fff',
-        data: freeText
-      }
-    ]
+    datasets: ls.map((label, i) => {
+      return {
+        label,
+        backgroundColor: backkgroundcolors[i],
+        data: datas[i],
+        barPercentage: 0.5,
+        barThickness: 6,
+        maxBarThickness: 8,
+        minBarLength: 2
+      };
+    })
   };
   myChart.update();
 }
