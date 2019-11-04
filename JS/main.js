@@ -353,8 +353,12 @@ const data = new (class {
     } else {
       $('.sliderDiv').show();
       $('#buttons').show();
-      $('.chartHeight').show();
       $('#current').show();
+      if (sChart) {
+        $('.chartHeight').show();
+      } else {
+        $('.chartHeight').hide();
+      }
     }
 
     //Get latest time
