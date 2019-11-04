@@ -239,6 +239,7 @@ function start() {
 function mainPageProcessing() {
   $('.firstPage').hide();
   $('.runningPage').show();
+  $('.chartHeight').show();
   runningRefresh(); //First run
   runRefeshInterval();
 }
@@ -280,9 +281,9 @@ function runningRefresh() {
 function changeDate(evt) {
   $(slider).val(50);
   changeDateVariable = true;
-  sChart = false;
-  $('.chartHeight').hide();
-  $('#showChartBtn').text('Show Chart');
+  // sChart = true;
+  // $('.chartHeight').show();
+  // $('#showChartBtn').text('Show Chart');
   data.setDate(new Date(evt.options[evt.selectedIndex].text));
 }
 
@@ -344,12 +345,16 @@ const data = new (class {
       console.log('This date no data');
       $('.sliderDiv').hide();
       $('#studentsProgress').html('<p>No Data for this date</p>');
+      $('.chartHeight').hide();
       $('#buttons').hide();
+      $('#current').hide();
       if (!refreshInterval && !incomingNewData) runRefeshInterval();
       return;
     } else {
       $('.sliderDiv').show();
       $('#buttons').show();
+      $('.chartHeight').show();
+      $('#current').show();
     }
 
     //Get latest time
@@ -482,9 +487,13 @@ const data = new (class {
     chartView(this.qnLabelArray);
   }
   refreshJasonView() {
-    this.qnLabelArray = this.arrayByQnLabel(this.dayData, this.dateHolder);
-    this.nameArray = this.arrayByNames(this.dayData, this.dateHolder);
-    jasonView(this.nameArray);
+    if (studentView) {
+      this.qnLabelArray = this.arrayByQnLabel(this.dayData, this.dateHolder);
+      this.nameArray = this.arrayByNames(this.dayData, this.dateHolder);
+      jasonView(this.nameArray);
+    } else {
+      $('#studentsProgress').html('');
+    }
   }
   arrayToDate(a, date) {
     return a.filter(
@@ -640,27 +649,42 @@ function jasonView(a) {
   } else console.log("Template doesn't work");
 }
 
-let sortNameBy = '';
-function sortName() {
-  if (sortNameBy === '') sortNameBy = 'asc';
-  if (sortNameBy == 'desc') {
-    sortNameBy = 'asc';
-    jasonView(data.arraySortString(data.nameArray, 'name', 'asc'));
-    $('#sortName').text('Sort by Name (Ascending)');
-  } else if (sortNameBy == 'asc') {
-    sortNameBy = 'desc';
-    $('#sortName').text('Sort by Name (Descending)');
-    jasonView(data.arraySortString(data.nameArray, 'name', 'desc'));
+// let sortNameBy = '';
+// function sortName() {
+//   if (sortNameBy === '') sortNameBy = 'asc';
+//   if (sortNameBy == 'desc') {
+//     sortNameBy = 'asc';
+//     jasonView(data.arraySortString(data.nameArray, 'name', 'asc'));
+//     $('#sortName').text('Sort by Name (Ascending)');
+//   } else if (sortNameBy == 'asc') {
+//     sortNameBy = 'desc';
+//     $('#sortName').text('Sort by Name (Descending)');
+//     jasonView(data.arraySortString(data.nameArray, 'name', 'desc'));
+//   }
+// }
+
+//Student
+let studentView = false;
+function showStudent() {
+  if (studentView) {
+    studentView = false;
+    $('#studentsProgress').hide();
+    $('#showStudentBtn').text('Show Student');
+  } else {
+    studentView = true;
+    $('#studentsProgress').show();
+    $('#showStudentBtn').text('Hide Student');
+    data.refreshJasonView();
   }
 }
 
 //Chart
-let sChart = false;
+let sChart = true; //Default turn on
 function showChart() {
   if (sChart) {
+    sChart = false;
     $('.chartHeight').hide();
     $('#showChartBtn').text('Show Chart');
-    sChart = false;
   } else {
     sChart = true;
     $('.chartHeight').show();
