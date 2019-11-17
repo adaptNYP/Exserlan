@@ -491,9 +491,9 @@ const data = new (class {
     chartView(this.qnLabelArray);
   }
   refreshJasonView() {
+    this.qnLabelArray = this.arrayByQnLabel(this.dayData, this.dateHolder);
+    this.nameArray = this.arrayByNames(this.dayData, this.dateHolder);
     if (studentView) {
-      this.qnLabelArray = this.arrayByQnLabel(this.dayData, this.dateHolder);
-      this.nameArray = this.arrayByNames(this.dayData, this.dateHolder);
       jasonView(this.nameArray);
     } else {
       $('#studentsProgress').html('');
@@ -678,8 +678,8 @@ function showStudent() {
     studentView = true;
     $('#studentsProgress').show();
     $('#showStudentBtn').text('Hide Student');
-    data.refreshJasonView();
   }
+  data.refreshJasonView();
 }
 
 //Chart
