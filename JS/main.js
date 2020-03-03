@@ -288,7 +288,7 @@ function changeDate(evt) {
 }
 
 const data = new (class {
-  dbRootURL = 'https://dxsurvey.com/api/MySurveys/getSurveyResults/';
+  dbRootURL = 'https://surveyjs.io/api/MySurveys/getSurveyResults/';
   ajaxData = []; //All Data
   sortedData = [];
   dayData = []; //Selected Date Data
