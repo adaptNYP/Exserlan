@@ -297,6 +297,8 @@ const data = new (class {
   nameArray = []; //Name Data, Jason's View
   qnLabelArray = []; //QnLabel Data for Charts
   chartInfos = []; //Chart info after clicking bar chart
+  uniqueNames = []; //Keep track of every student who entered quiz
+  studentsNotAttempted = []; //Keep track of studnents who have yet to attempt per question
 
   getData(dbID, dbaccessKey) {
     return new Promise((resolve, reject) => {
@@ -399,13 +401,30 @@ const data = new (class {
           isEquivalent(data, rd) ? (data = resolvedThisDateData[i].data) : data
         );
       }
+      let collator = new Intl.Collator(undefined, {sensitivity: 'base'});
+      this.uniqueNames = [...new Set(this.dayData.map(a => a.Name))].sort(collator.compare);
+      for (let i = 0; i < this.uniqueNames.length; i++){
+        let findAllByName = this.dayData.filter(a => a.Name==this.uniqueNames[i]);
+        let containsqn0 = findAllByName.some(a=>a["QnLabel"]==="0");
+        if (!containsqn0){
+          let newdata = {
+            Name:this.uniqueNames[i],
+            QnLabel: "0",
+            HappendAt: new Date(Math.min.apply(null,
+              findAllByName.map(function(findAllByName){return findAllByName.HappendAt})))
+          };
+          this.dayData.push(newdata);
+          continue;
+        };
+      };
     }
     this.setUp();
   }
 
   //Activate with useCurrentTime button
   setUp() {
-    const earliestTime = this.dayData[this.dayData.length - 1].HappendAt;
+    const earliestTime = this.dayData[this.dayData.length - 2].HappendAt;
+    console.log(earliestTime)
     const minValue = dt.dateToSeconds(earliestTime);
     const maxValue = dt.dateToSeconds(this.dayEndTime);
     const maxString = dt.dateToTimeString(this.dayEndTime);
@@ -488,9 +507,12 @@ const data = new (class {
   runChartView() {
     console.log('run chart');
     this.qnLabelArray = this.arrayByQnLabel(this.dayData, this.dateHolder);
+    this.studentsNotAttempted = this.arrayByQnNotAnswered(this.qnLabelArray, this.uniqueNames)
+    this.nameArray = this.arrayByNames(this.dayData, this.dateHolder);
     chartView(this.qnLabelArray);
   }
   refreshJasonView() {
+    console.log("refresh json view")
     this.qnLabelArray = this.arrayByQnLabel(this.dayData, this.dateHolder);
     this.nameArray = this.arrayByNames(this.dayData, this.dateHolder);
     if (studentView) {
@@ -525,11 +547,12 @@ const data = new (class {
         };
       })
       .filter(({ progress }) => progress.length != 0);
-    if (!sortNameBy) return this.arraySortString(newArray, 'latest', 'asc');
+      if (!sortNameBy) return this.arraySortString(newArray, 'latest', 'asc');
     return this.arraySortString(newArray, 'name', sortNameBy);
   }
+
   arrayByQnLabel(a, time = new Date()) {
-    return this.arraySortString(
+    return this.arraySortQnLabel(
       [...new Set(a.map(({ QnLabel }) => QnLabel))].map(QnLabel => {
         let c = a.filter(v => QnLabel == v.QnLabel && v.HappendAt <= time);
         return {
@@ -537,7 +560,9 @@ const data = new (class {
           data: [...new Set(c.map(({ Name }) => Name))].map(Name =>
             c.find(s => s.Name == Name)
           ),
-          type: !c.find(s => s.Code || s.Answer)
+          type:!c.find(s => s.QnLabel !=0)
+            ? 'CP' //Checkpoint (Question 0)
+            : !c.find(s => s.Code || s.Answer)
             ? 'MS' //Milestone
             : !c.find(s => s.Code)
             ? 'FR' //Free Response
@@ -546,9 +571,31 @@ const data = new (class {
             : ''
         };
       }),
-      'QnLabel'
     );
   }
+
+  arrayByQnNotAnswered(a,b){
+    let newarray = [...new Set(a.map(({ QnLabel }) => QnLabel))]
+    .map(QnLabel => {
+      let notCompleted = []
+      let c = a.filter(x=> x.QnLabel==QnLabel).map(y=>y.data)
+      let completed=c[0].map(function(x){return x.Name;});
+      b.forEach(function(i){
+        if (completed.length!=b.length && completed.includes(i)==false){
+          notCompleted.push(i)
+        }
+        else return;
+      });
+      return{
+        QnLabel,
+        Names: notCompleted
+      }
+    })
+    if (newarray.length!=0)
+    newarray.find(x=> x.QnLabel==0).Names = this.uniqueNames.sort();
+    return newarray
+    }
+
   arraySortString(array, name, ascdesc = 'desc') {
     return array.sort((a, b) => {
       return ascdesc == 'desc'
@@ -566,6 +613,19 @@ const data = new (class {
         : new Error('Unable to sort');
     });
   }
+  arraySortQnLabel(array){
+    let collator = new Intl.Collator(undefined, {numeric: true});
+    let sortedArray = array.map(a => a.QnLabel);
+    sortedArray.sort(collator.compare);
+    for (let i=0; i<array.length; i++){
+      if (array[i].QnLabel != sortedArray[i]){
+        let index = array.findIndex(x=>x.QnLabel==sortedArray[i]);
+        [array[index], array[i]] = [array[i], array[index]];
+      }
+      else continue;
+    }
+    return array;
+  };
 })();
 
 const dt = new (class {
@@ -631,6 +691,9 @@ function jasonView(a) {
             break;
           case 'FR':
             cell.classList.add('cellFreeResponse');
+            break;
+          case 'CP':
+            cell.classList.add('cellCheckpoint');
             break;
           default:
             if (Code == 'codeGreen') cell.classList.add('cellCorrect');
@@ -720,7 +783,7 @@ const myChart = new Chart(ctx, {
         this.data.datasets.forEach(function(dataset, i) {
           var meta = chartInstance.controller.getDatasetMeta(i);
           meta.data.forEach(function(bar, index) {
-            var data = dataset.data[index];
+          var data = dataset.data[index];
             if (data != 0) {
               ctx.fillStyle = 'black';
               ctx.fillText(data, bar._model.x - 20, bar._model.y - 5);
@@ -745,6 +808,88 @@ const myChart = new Chart(ctx, {
           }
         }
       ]
+    },
+    tooltips: {
+      enabled: false,
+      custom: function(tooltipModel){
+        var tooltipEl = document.getElementById('chartjs-tooltip');
+
+        if (!tooltipEl) {
+            tooltipEl = document.createElement('div');
+            tooltipEl.id = 'chartjs-tooltip';
+            tooltipEl.innerHTML = '<table></table>';
+            document.body.appendChild(tooltipEl);
+        }
+
+        if (tooltipModel.opacity === 0) {
+            tooltipEl.style.opacity = 0;
+            return;
+        }
+
+        // Set caret Position
+        tooltipEl.classList.remove('above', 'below', 'no-transform');
+        if (tooltipModel.yAlign) {
+            tooltipEl.classList.add(tooltipModel.yAlign);
+        } else {
+            tooltipEl.classList.add('no-transform');
+        }
+
+      if (tooltipModel.body) {
+          let studentArr = data.studentsNotAttempted.map(({ Names }) => Names);
+          let tooltipIndex = tooltipModel.dataPoints[0].index;
+          let titleLines = tooltipModel.title;
+          let bodyLines = studentArr[tooltipIndex];
+          let total = bodyLines.length;
+          let counter=0;
+
+          //Set Text
+          let innerHtml = '<thead>';
+          titleLines.forEach(function(title) {
+            (title!=0)
+              ?innerHtml += '<tr><th>' + "Qn " + title + " - " + total + " Students Yet to Attempt" + '</th></tr>'
+              :innerHtml += '<tr><th>' + total + " Students Currently Present" + '</th></tr>'
+            });
+          innerHtml += '</thead><tbody>';
+          if (bodyLines.length!=0){
+            if (bodyLines.length<11 || titleLines[0]==0){
+              bodyLines.forEach(function(body) { 
+                innerHtml += '<tr><td>' + body + '</td></tr>'
+              });
+            }
+            else{
+              for (let i = 0; i < 10; i++){
+              innerHtml += '<tr><td>' + bodyLines[i] + '</td></tr>';
+              };
+              innerHtml += '<tr><td>Etc.</td></tr>';
+            }
+          }
+          else{
+            innerHtml += '<tr><td>'+ "All Students Attempted" + '</td></tr>';
+          };
+          innerHtml += '</tbody>';
+
+          var tableRoot = tooltipEl.querySelector('table');
+          tableRoot.innerHTML = innerHtml;
+        }
+
+        var position = this._chart.canvas.getBoundingClientRect();
+
+        //Tooltip css
+        tooltipEl.style.opacity = 1;
+        tooltipEl.style.position = 'absolute';
+        tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
+        tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY + 'px';
+        tooltipEl.style.fontFamily = tooltipModel._bodyFontFamily;
+        tooltipEl.style.fontSize = '14px'
+        tooltipEl.style.fontStyle = tooltipModel._bodyFontStyle;
+        tooltipEl.style.padding = tooltipModel.yPadding + 'px ' + tooltipModel.xPadding + 'px';
+        tooltipEl.style.pointerEvents = 'none';
+        tooltipEl.style.background = 'rgb(33,31,31,0.9)';
+        tooltipEl.style.border = '2px solid grey';
+        tooltipEl.style.borderRadius = '5px';
+        tooltipEl.style.color = 'white';
+        tooltipEl.style.zIndex = "0";
+      },
     }
   }
 });
@@ -757,7 +902,8 @@ function chartView(chartData) {
     freeText = [],
     codeGreen = [],
     codeOrange = [],
-    codeRed = [];
+    codeRed = [],
+    checkpoint = [];
   chartData.forEach(({ data, type }) => {
     if (type == 'MS') {
       green.push(0);
@@ -767,6 +913,7 @@ function chartView(chartData) {
       codeGreen.push(0);
       codeOrange.push(0);
       codeRed.push(0);
+      checkpoint.push(0);
     } else if (type == 'FR') {
       green.push(0);
       red.push(0);
@@ -775,6 +922,16 @@ function chartView(chartData) {
       codeGreen.push(0);
       codeOrange.push(0);
       codeRed.push(0);
+      checkpoint.push(0);
+    } else if (type == 'CP') {
+      green.push(0);
+      red.push(0);
+      milestone.push(0);
+      freeText.push(0);
+      codeGreen.push(0);
+      codeOrange.push(0);
+      codeRed.push(0);
+      checkpoint.push(data.length);
     } else {
       green.push(
         data.filter(({ Code, Answer }) => Code == 'codeGreen' && Answer).length
@@ -791,6 +948,7 @@ function chartView(chartData) {
       codeRed.push(
         data.filter(({ Code, Answer }) => Code == 'codeRed' && !Answer).length
       );
+      checkpoint.push(0);
     }
   });
   const ls = [
@@ -800,7 +958,8 @@ function chartView(chartData) {
     'CodeOrange',
     'CodeRed ',
     'Milestone',
-    'Free Response'
+    'Free Response',
+    'Checkpoint'
   ];
   const backkgroundcolors = [
     'green',
@@ -809,7 +968,8 @@ function chartView(chartData) {
     '#ffb347',
     '#ff6961',
     'grey',
-    '#007fff'
+    '#007fff',
+    '#A86D43'
   ];
   const datas = [
     green,
@@ -818,7 +978,8 @@ function chartView(chartData) {
     codeOrange,
     codeRed,
     milestone,
-    freeText
+    freeText,
+    checkpoint
   ];
   $('.chartHeight').css('height', chartData.length * 70 + 110);
   myChart.data = {
@@ -871,6 +1032,8 @@ function chartInfoView() {
   $('.modal-body').removeClass('zeroPadding');
   refreshChartInfo();
   modal.style.display = 'block';
+  $(".studentName").css("color", "transparent");
+  $(".studentName").css("text-shadow", "0 0 10px #000");
   $('.chartButton').show();
 }
 
@@ -880,7 +1043,8 @@ function refreshChartInfo() {
     .map(user =>
       user.progress.find(({ QnLabel }) => chartInfoDataPoint == QnLabel)
     )
-    .filter(value => value);
+    .filter(value => value)
+    .sort((a,b)=> (a.HappendAt>b.HappendAt)?1:-1);
   if (togglePieChart) {
     togglePieChart = false;
     pieChartToggle();
@@ -903,8 +1067,16 @@ function chartInfoFillData() {
       data.chartInfos.map((value, index) => {
         message += `
       <hr>
-      <div class="row" style="font-size: 0.8em;">
-        <div class="col-6 breakword tableCenter">${value.Name}</div>
+      <div class="row" style="font-size: 0.8em;">`
+      if ($('.studentName').css("text-shadow")!="none"){
+        message+=`
+          <div class="col-6 breakword tableCenter studentName" style="color: transparent; text-shadow: 0 0 10px #000">${value.Name}</div>
+      `}
+      else{
+        message+=`
+          <div class="col-6 breakword tableCenter studentName">${value.Name}</div>
+      `};
+      message+=`
         <div class="col-6 breakword" style="display: flex;">
           <div data-index ="${index}" onclick="tableResolve(this)" class="${
           value.Code == 'codeGreen'
@@ -946,19 +1118,27 @@ function chartInfoFillData() {
         `;
         });
     }
-  } else if (questionType == 'MS') {
+  } else if (questionType == 'MS' || questionType == 'CP') {
     if (chartInfo == 'name') {
       message = `
     <div class="row" style="font-weight: bold;text-align: center;">
         <div class="col-12 breakword">Name</div>
     </div>`;
       data.chartInfos.map(({ Name }) => {
+      if ($('.studentName').css("text-shadow")!="none"){
         message += `
-      <hr>
-      <div class="row" style="font-size: 0.8em;">
-        <div class="col-12 breakword tableCenter">${Name}</div>
-      </div>
-      `;
+          <hr>
+          <div class="row" style="font-size: 0.8em;">
+            <div class="col-12 breakword tableCenter studentName" style="color: transparent; text-shadow: 0 0 10px #000">${Name}</div>
+          </div>
+          `}
+      else{
+        message += `
+          <hr>
+          <div class="row" style="font-size: 0.8em;">
+            <div class="col-12 breakword tableCenter studentName">${Name}</div>
+          </div>
+          `};
       });
     } else {
       message = `
@@ -982,9 +1162,17 @@ function chartInfoFillData() {
       data.chartInfos.map((value, index) => {
         message += `
         <hr>
-        <div class="row" style="font-size: 0.8em;">
-          <div class="col-4 breakword tableCenter">${value.Name}</div>
-          <div class="col-5 breakword tableCenter">${value.Answer}</div>
+        <div class="row" style="font-size: 0.8em;">`
+        if ($('.studentName').css("text-shadow")!="none"){
+          message+=`
+            <div class="col-4 breakword tableCenter studentName" style="color: transparent; text-shadow: 0 0 10px #000">${value.Name}</div>
+          `}
+        else{
+          message+=`
+           <div class="col-4 breakword tableCenter studentName">${value.Name}</div>
+        `};
+        message+=
+        `<div class="col-5 breakword tableCenter">${value.Answer}</div>
           <div class="col-3 breakword" style="display: flex;">
             <div data-index ="${index}" onclick="tableResolve(this)" class="${
           value.Code == 'codeGreen'
@@ -1037,6 +1225,9 @@ function chartInfoFillData() {
 //Pie Chart
 let togglePieChart = false;
 function pieChartToggle() {
+  counter = 0;
+  colorsExcludingGreen = ["#7A92F2","#C18860","#CC2525", "#E67D32", "#E4D223","#F1ABE3","#6FA3CB","#EE9CA4","#47B8E5","#AB85CF"];
+  redColors= ["#D81717", "#BC1919","#940000"];
   if (!togglePieChart) {
     console.log('Toggle piechart');
     togglePieChart = true;
@@ -1084,6 +1275,14 @@ function pieChartToggle() {
         }
       ];
       backgroundColor = ['grey'];
+    } else if (questionType == 'CP') {
+      answers = [
+        {
+          number: data.chartInfos.length,
+          uniqueanswer: 'Checkpoint'
+        }
+      ];
+      backgroundColor = ['#A86D43'];
     } else if (questionType == 'FR') {
       answers = [...new Set(data.chartInfos.map(({ Answer }) => Answer))]
         .map(uniqueanswer => {
@@ -1098,8 +1297,17 @@ function pieChartToggle() {
           return a.number > b.number ? -1 : b.number > a.number ? 1 : 0;
         });
       backgroundColor = answers.map(() => {
-        const color = Math.round(Math.random() * 255);
-        return `rgb(${color}, ${Math.round(Math.random() * 255)}, ${color})`;
+        if (counter<10){
+          let color = colorsExcludingGreen[counter];
+          counter++;
+          return color;
+        }
+        else {
+          let red = Math.floor(Math.random()*(255-60)+1)+60;
+          let green  = Math.floor(Math.random()*(45)+1);
+          let blue = Math.floor(Math.random()*(255)+1);
+          return `rgb(${red}, ${green}, ${blue})`;
+        };
       });
     } else {
       //MCQ or Text
@@ -1117,9 +1325,18 @@ function pieChartToggle() {
           return a.number > b.number ? -1 : b.number > a.number ? 1 : 0;
         });
       backgroundColor = answers.map(({ code, number }) => {
-        if (code == 'codeGreen') return '#4baea0';
-        else red = (1 - number / total) * 150;
-        return `rgb(254, ${red}, ${red})`;
+        if (code == 'codeGreen') return '#25B72A';
+        else{
+          if (counter<10){
+            let color = redColors[counter];
+            counter++;
+            return color;
+          }
+          else{
+            let red = Math.floor(Math.random()*(100)+1);
+            return `rgb(254, ${red}, 0)`;
+          };
+        };
       });
     }
 
@@ -1345,5 +1562,14 @@ function isEquivalent(a, b) {
   return true;
 }
 
-//Testing
-// $("#startButton").click();
+//Show & blur name
+function showNameToggle(){
+  if($('.studentName').css("text-shadow")!="none"){
+    $(".studentName").css("color", "");
+    $(".studentName").css("textShadow", "none");
+  }
+  else{
+    $(".studentName").css("color", "transparent");
+    $(".studentName").css("textShadow", "0 0 10px #000")
+  }
+};
