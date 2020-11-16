@@ -21,17 +21,17 @@ $(document).ready(function() {
 switch (window.location.protocol) {
   case 'http:':
   case 'https:':
-    getTxt = (function() {
-      $.ajax({
-        url: 'surveyJSDBinfo.txt',
-        success: function(data) {
-          info = data.split(',');
-          $('#surveyJSDBid').val(info[0]);
-          $('#surveyJSDBaccessKey').val(info[1]);
-        }
-      });
-    })();
-
+    // let keys = "";
+    // let xmlHttp = new XMLHttpRequest();
+    // xmlHttp.onreadystatechange = function(){
+    //   if(xmlHttp.status == 200 && xmlHttp.readyState == 4){
+    //     keys = xmlHttp.responseText;
+    //     $('#surveyJSDBid').val(keys);
+    //     start();
+    //   }
+    // };
+    // xmlHttp.open("GET", "JS/surveyJSDBinfo.txt", true)
+    // xmlHttp.send()
     break;
   case 'file:':
     console.log('over file');
@@ -84,8 +84,6 @@ function handleFileSelect(evt) {
         if (index == 0) {
           $('#surveyJSDBid').val(data[row][item]);
           index = index + 1;
-        } else {
-          $('#surveyJSDBaccessKey').val(data[row][item]);
         }
       }
     }
@@ -96,7 +94,6 @@ function handleFileSelect(evt) {
 }
 
 var dbID = $('#surveyJSDBid').val();
-var dbaccessKey = $('#surveyJSDBaccessKey').val();
 let slider = document.getElementById('myRange');
 
 // Get the <span> element that closes the modal
@@ -113,10 +110,9 @@ span.onclick = () => {
 
 function useMe(evt) {
   $('#surveyJSDBid').val((_dbid = $(evt).data().dbid));
-  $('#surveyJSDBaccessKey').val((_dbaccesskey = $(evt).data().dbaccesskey));
   start();
 }
-let _dbid, _dbaccesskey;
+let _dbid;
 
 $('#clearID').click(() => {
   window.localStorage.removeItem(LSK);
@@ -127,7 +123,6 @@ $('#startButton').click(() => start());
 
 $('#clearButton').click(() => {
   $('#surveyJSDBid').val('');
-  $('#surveyJSDBaccessKey').val('');
 });
 
 let rb = 'Stop';
@@ -146,9 +141,60 @@ $('#toggleStopStartButton').click(() => {
 });
 
 slider.oninput = function() {
-  $('#sliderOutput').html(dt.formatTime(this.value));
-  data.dataNewTime(dt.secondsToDate(this.value));
+    let endDate = dt.secondsToDate(this.value);
+    $('.sliderOutput').val(dt.dateToInputTimeString(endDate));
+    data.dataNewTime(endDate);
 };
+
+function inputTimeChange(inputId){
+  if (inputId == "inputMin"){
+    let startValue = $('.startTime').val();
+    let earliestTime = new Date(Math.min.apply(null,data.dayData.map(function(d){return d.HappendAt})));
+    let indivTime = (startValue.split(":"))
+    earliestTime.setHours(indivTime[0]);
+    earliestTime.setMinutes(indivTime[1]);
+    $(slider).attr('min', dt.dateToSeconds(earliestTime))
+    $(slider).val(dt.dateToSeconds(earliestTime))
+    data.dataNewTime(earliestTime);
+  }
+  else{
+    let latestTime = new Date(Math.max.apply(null,data.dayData.map(function(d){return d.HappendAt})));
+    let sliderOutput = $('.sliderOutput').val();
+    let indivTime = sliderOutput.split(":");
+    latestTime.setHours(indivTime[0]);
+    latestTime.setMinutes(indivTime[1]);
+    $(slider).attr('max', dt.dateToSeconds(latestTime));
+    $(slider).val(dt.dateToSeconds(latestTime))
+    data.dataNewTime(latestTime);
+  }
+};
+
+function setTimeNow(buttonId){
+  currentDay? now = new Date() : now = new Date(Math.max.apply(null,data.dayData.map(function(d){return d.HappendAt})));
+  let latestTime = new Date(Math.max.apply(null,data.dayData.map(function(d){return d.HappendAt})));
+  let earliestTime = new Date(Math.min.apply(null,data.dayData.map(function(d){return d.HappendAt})));
+  if (buttonId == "startNow") {
+    $('.startTime').val(dt.dateToInputTimeString(new Date()));
+    $(slider).attr('min', dt.dateToSeconds(new Date()));
+  }
+  else if (buttonId == "endNow"){
+    $('.sliderOutput').val(dt.dateToInputTimeString(new Date()));
+    $(slider).attr('max', dt.dateToSeconds(new Date()));
+    data.holdingMode = null
+    clearInterval(currentTimeInterval);
+    data.currentInterval();
+  }
+  else if (buttonId == "startEarliest"){
+    $('.startTime').val(dt.dateToInputTimeString(earliestTime))
+    $(slider).attr('min', dt.dateToSeconds(earliestTime));
+    data.dataNewTime(earliestTime)
+  }
+  else{
+    $('.sliderOutput').val(dt.dateToInputTimeString(latestTime))
+    $(slider).attr('max', dt.dateToSeconds(latestTime));
+    data.dataNewTime(latestTime)
+  }
+}
 
 function loadIDHolder() {
   const keys = JSON.parse(window.localStorage.getItem(LSK));
@@ -158,7 +204,7 @@ function loadIDHolder() {
   if (keys) {
     $('#keyRowList').show();
     let appendingHTML = '';
-    keys.forEach(({ dbID, dbaccessKey, name }) => {
+    keys.forEach(({ dbID, name }) => {
       appendingHTML += `
         <hr>
         <div class="row">
@@ -166,7 +212,7 @@ function loadIDHolder() {
                 <p class="wordBreak">${name}</p>
             </div>
             <div class="col-3 nopadding" style="display: flex">
-                <button class="btn btn-success btn-sm useMe" onclick="useMe(this)"data-dbID="${dbID}" data-dbaccessKey="${dbaccessKey}" style="margin: auto;">Use</button>
+                <button class="btn btn-success btn-sm useMe" onclick="useMe(this)"data-dbID="${dbID}" style="margin: auto;">Use</button>
             </div>
         </div>
     `;
@@ -194,9 +240,8 @@ function toggleCurrent() {
 //////////////////////////////////////////////////Start
 function start() {
   let name = $('#name').val();
-  if (_dbid && _dbaccesskey) {
+  if (_dbid) {
     dbID = _dbid;
-    dbaccessKey = _dbaccesskey;
   } else {
     if (!name) {
       alert('Please Enter Name');
@@ -204,36 +249,35 @@ function start() {
       return;
     }
     dbID = $('#surveyJSDBid').val();
-    dbaccessKey = $('#surveyJSDBaccessKey').val();
   }
-  if (dbID && dbaccessKey) {
-    $('#surveyJSDBid, #surveyJSDBaccessKey, #startButton').prop(
+  if (dbID) {
+    $('#surveyJSDBid, #startButton').prop(
       'disabled',
       true
     );
     $('#firstLoading').show();
     data
-      .getData(dbID, dbaccessKey)
+      .getData(dbID)
       .then(data => {
         let ka = JSON.parse(window.localStorage.getItem(LSK));
         if (!ka) ka = [];
-        if (!ka.find(k => k.dbID == dbID && k.dbaccessKey == dbaccessKey)) {
-          ka.push({ dbID, dbaccessKey, name });
+        if (!ka.find(k => k.dbID == dbID)) {
+          ka.push({ dbID, name });
           window.localStorage.setItem(LSK, JSON.stringify(ka));
           loadIDHolder();
         }
         if (data.length == 0) alert('No data');
         else mainPageProcessing();
       })
-      .catch(() => alert('Invalid dbID/dbaccessKey'))
+      .catch(() => alert('Invalid dbID'))
       .finally(() => {
-        $('#surveyJSDBid, #surveyJSDBaccessKey, #startButton').prop(
+        $('#surveyJSDBid, #startButton').prop(
           'disabled',
           false
         );
         $('#firstLoading').hide();
       });
-  } else alert('Empty dbID/dbaccessKey');
+  } else alert('Empty dbID');
 }
 
 function mainPageProcessing() {
@@ -253,7 +297,7 @@ function runRefeshInterval() {
     console.log('Refreshing');
     let oldDataLength = [...data.ajaxData].length;
     data
-      .getData(dbID, dbaccessKey)
+      .getData(dbID)
       .then(({ length }) => {
         refreshLimit.restart();
         if (oldDataLength != length) {
@@ -284,11 +328,14 @@ function changeDate(evt) {
   // sChart = true;
   // $('.chartHeight').show();
   // $('#showChartBtn').text('Show Chart');
-  data.setDate(new Date(evt.options[evt.selectedIndex].text));
+  let currLes = $('#lessonSelection').val();
+  data.setDate(new Date(evt.options[evt.selectedIndex].text), currLes);
 }
 
+$('#lessonSelection').attr('disabled', true)
+
 const data = new (class {
-  dbRootURL = 'https://surveyjs.io/api/MySurveys/getSurveyResults/';
+  dbRootURL = 'https://surveyjs.io/api/MySurveys/getSurveyPublicResults/';
   ajaxData = []; //All Data
   sortedData = [];
   dayData = []; //Selected Date Data
@@ -299,12 +346,13 @@ const data = new (class {
   chartInfos = []; //Chart info after clicking bar chart
   uniqueNames = []; //Keep track of every student who entered quiz
   studentsNotAttempted = []; //Keep track of studnents who have yet to attempt per question
+  allLessons=[]; //All lesson titles
 
-  getData(dbID, dbaccessKey) {
+  getData(dbID) {
     return new Promise((resolve, reject) => {
       $.ajax({
         type: 'GET',
-        url: `${this.dbRootURL + dbID}?accessKey=${dbaccessKey}`,
+        url: `https://surveyjs.io/api/MySurveys/getSurveyPublicResults/${dbID}`,
         dataType: 'json'
       })
         .done(value => resolve((this.ajaxData = value.Data)))
@@ -324,6 +372,15 @@ const data = new (class {
     let uniqueDates = [
       ...new Set(d.map(({ HappendAt }) => dt.dateToDateString(HappendAt)))
     ];
+    //set lesson selector
+    let lesHolder = $('#lessonSelection').val();
+    let uniqueLessons =[...new Set(d.map(l => `<option>${l.Title}</option>`))];
+    let collator = new Intl.Collator(undefined, {sensitivity: 'base'});
+    uniqueLessons.forEach(element=>{
+      if(this.allLessons.includes(element)==false) this.allLessons.push(element)
+    })
+    $('#lessonSelection').html(this.allLessons.sort(collator.compare));
+    //set date selector
     let holder = $('#dateSelection').val();
     $('#dateSelection').html(() => {
       let newArray = uniqueDates
@@ -334,13 +391,29 @@ const data = new (class {
     });
     if (holder) {
       $('#dateSelection').val(holder);
-      this.setDate(new Date(holder));
-    } else this.setDate(new Date());
+      if (lesHolder){
+        $('#lessonSelection').val(lesHolder);
+        this.setDate(new Date(holder), lesHolder);
+      }
+      else{
+        this.setDate(new Date(holder), $('#lessonSelection').val())
+      }
+    } 
+    else {
+      if (lesHolder){
+        $('#lessonSelection').val(lesHolder);
+        this.setDate(new Date(), lesHolder);
+      }
+      else{
+        this.setDate(new Date(), $('#lessonSelection').val())
+      }
+    }
   }
 
   //Activate when change date
-  setDate(date) {
+  setDate(date, lesson) {
     this.dayData = this.arrayToDate(this.sortedData, date);
+    this.dayData = this.arrayByLesson(this.dayData, lesson);
 
     //If selected date doesn't have data, only applicable for today's date
     if (this.dayData.length == 0) {
@@ -369,6 +442,10 @@ const data = new (class {
       useCurrentTime = $('#currentB').text() == 'False' ? false : true;
       currentDay = true;
       $('#current').show();
+      $('#btnStart').html('Set Now')
+      $('#btnStart').prop("value", "startNow")
+      $('#btnEnd').html('Set Now')
+      $('#btnEnd').prop("value", "endNow")
       if (!refreshInterval && !incomingNewData) runRefeshInterval();
     } else {
       useCurrentTime = false;
@@ -376,6 +453,10 @@ const data = new (class {
       clearInterval(refreshInterval);
       refreshInterval = null;
       $('#current').hide();
+      $('#btnStart').html('Set Earliest')
+      $('#btnStart').prop("value", "startEarliest")
+      $('#btnEnd').html('Set Latest')
+      $('#btnEnd').prop("value", "endLatest")
     }
     incomingNewData = false;
 
@@ -384,10 +465,10 @@ const data = new (class {
       currentDay || !$('#dateSelection').val()
         ? dt.dateToDateString(new Date())
         : $('#dateSelection').val();
-    let resolvedThisDateData = resolvedData.filter(s => s.date == cDate);
+    let resolvedThisDateData = resolvedData.filter(s => s.date == cDate && s.title==lesson);
     if (resolvedThisDateData) {
       for (let i = 0; i < resolvedThisDateData.length; i++) {
-        const { Answer, Code, HappendAt, Name, QnLabel } = resolvedThisDateData[
+        const { Answer, Code, HappendAt, Name, QnLabel, Title } = resolvedThisDateData[
           i
         ].data;
         let rd = {
@@ -395,48 +476,43 @@ const data = new (class {
           QnLabel,
           Name,
           Answer,
-          HappendAt
+          HappendAt,
+          Title
         };
-        this.dayData = this.dayData.map(data =>
-          isEquivalent(data, rd) ? (data = resolvedThisDateData[i].data) : data
-        );
+        this.dayData.map(data => {
+          if (data.Name == rd.Name && data.Answer == rd.Answer && data.Code==rd.Code && data.Title == rd.Title && data.QnLabel == rd.QnLabel)
+          data.resolved = resolvedThisDateData[i].data.resolved
+          else data
+        });
       }
-      let collator = new Intl.Collator(undefined, {sensitivity: 'base'});
-      this.uniqueNames = [...new Set(this.dayData.map(a => a.Name))].sort(collator.compare);
-      for (let i = 0; i < this.uniqueNames.length; i++){
-        let findAllByName = this.dayData.filter(a => a.Name==this.uniqueNames[i]);
-        let containsqn0 = findAllByName.some(a=>a["QnLabel"]==="0");
-        if (!containsqn0){
-          let newdata = {
-            Name:this.uniqueNames[i],
-            QnLabel: "0",
-            HappendAt: new Date(Math.min.apply(null,
-              findAllByName.map(function(findAllByName){return findAllByName.HappendAt})))
-          };
-          this.dayData.push(newdata);
-          continue;
-        };
-      };
     }
+    this.setQn0();
     this.setUp();
+  }
+
+  setLesson(evt){
+    console.log("lesson changed");
+    let date = $('#dateSelection option:selected').val();
+    if (date.includes("(Today)")) date = new Date(date.replace("(Today)", "").trim());
+    else date = new Date(date)
+    let currLes = (evt.options[evt.selectedIndex].text)
+    this.setDate(date, currLes)
+    this.runChartView();
+    this.refreshJasonView();
   }
 
   //Activate with useCurrentTime button
   setUp() {
-    const earliestTime = this.dayData[this.dayData.length - 2].HappendAt;
-    console.log(earliestTime)
+    const earliestTime = new Date(Math.min.apply(null,this.dayData.map(function(d){return d.HappendAt})))//this.dayData[this.dayData.length - 2].HappendAt;
     const minValue = dt.dateToSeconds(earliestTime);
     const maxValue = dt.dateToSeconds(this.dayEndTime);
-    const maxString = dt.dateToTimeString(this.dayEndTime);
+    const maxString = dt.dateToInputTimeString(this.dayEndTime);
     $(slider).attr('min', minValue);
 
-    //Testing
-    $('#startTime').text(dt.dateToTimeString(earliestTime));
-    // $("#endTime").text(maxString);
-
+    $('.startTime').val(dt.dateToInputTimeString(earliestTime));
     //If there is a change of date/html is not set
-    if ($('#sliderOutput').html() == '' || changeDateVariable)
-      $('#sliderOutput').html(maxString);
+    if ($('.sliderOutput').val() == '' || changeDateVariable)
+     $('.sliderOutput').val(maxString);
 
     //Check if use current time
     if (useCurrentTime) {
@@ -450,8 +526,8 @@ const data = new (class {
         if (currentDay)
           return this.dataNewTime(dt.secondsToDate($(slider).val()));
         changeDateVariable = false;
+        $('.sliderOutput').val(maxString);
         $(slider).val(maxValue);
-        $('#sliderOutput').html(maxString);
         this.dataNewTime(this.dayEndTime);
       } else this.dataNewTime(dt.secondsToDate($(slider).val()));
     }
@@ -484,7 +560,7 @@ const data = new (class {
         this.holdingMode = true;
         $('#holding').text('(Lock)');
         $(slider).val(currentSeconds);
-        $('#sliderOutput').html(dt.dateToTimeString(currentTime));
+        $('.sliderOutput').val(dt.dateToInputTimeString(currentTime));
         if (currentNewData) this.dataNewTime(currentTime);
       } else {
         $('#holding').text('(Free)');
@@ -507,8 +583,7 @@ const data = new (class {
   runChartView() {
     console.log('run chart');
     this.qnLabelArray = this.arrayByQnLabel(this.dayData, this.dateHolder);
-    this.studentsNotAttempted = this.arrayByQnNotAnswered(this.qnLabelArray, this.uniqueNames)
-    this.nameArray = this.arrayByNames(this.dayData, this.dateHolder);
+    this.studentsNotAttempted = this.arrayByQnNotAnswered(this.qnLabelArray, this.uniqueNames);
     chartView(this.qnLabelArray);
   }
   refreshJasonView() {
@@ -520,6 +595,23 @@ const data = new (class {
     } else {
       $('#studentsProgress').html('');
     }
+  }
+  setQn0(){
+  let collator = new Intl.Collator(undefined, {sensitivity: 'base'});
+    this.uniqueNames = [...new Set(this.dayData.map(a => a.Name))].sort(collator.compare);
+    for (let i = 0; i < this.uniqueNames.length; i++){
+      let findAllByName = this.dayData.filter(a => a.Name==this.uniqueNames[i]);
+      let containsqn0 = findAllByName.some(a=>a["QnLabel"]==="0");
+      if (!containsqn0){
+        let newdata = {
+          Name:this.uniqueNames[i],
+          QnLabel: "0",
+          HappendAt: new Date(Math.min.apply(null,
+            findAllByName.map(function(findAllByName){return findAllByName.HappendAt}))),
+        };
+        this.dayData.push(newdata);
+      };
+    };
   }
   arrayToDate(a, date) {
     return a.filter(
@@ -573,7 +665,6 @@ const data = new (class {
       }),
     );
   }
-
   arrayByQnNotAnswered(a,b){
     let newarray = [...new Set(a.map(({ QnLabel }) => QnLabel))]
     .map(QnLabel => {
@@ -590,12 +681,14 @@ const data = new (class {
         QnLabel,
         Names: notCompleted
       }
-    })
+    });
     if (newarray.length!=0)
     newarray.find(x=> x.QnLabel==0).Names = this.uniqueNames.sort();
     return newarray
-    }
-
+  }
+  arrayByLesson(a, name){
+    return a.filter(x=> x.Title == name)
+  }
   arraySortString(array, name, ascdesc = 'desc') {
     return array.sort((a, b) => {
       return ascdesc == 'desc'
@@ -637,6 +730,13 @@ const dt = new (class {
   }
   dateToDateString(date) {
     return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  }
+  dateToInputTimeString(date){
+    let hours = date.getHours().toString();
+    let minutes = date.getMinutes().toString();
+    hours.length < 2 ? hours = '0' + hours : hours;
+    minutes.length < 2 ? minutes = '0' + minutes : minutes;
+    return `${hours}:${minutes}`
   }
   formatTime(s) {
     let seconds = s % 60;
@@ -767,7 +867,6 @@ const myChart = new Chart(ctx, {
   options: {
     aspectRatio: 1,
     maintainAspectRatio: false,
-    // onResize: () => console.log("asdasd"),
     animation: {
       duration: 0,
       onComplete: function() {
@@ -874,10 +973,18 @@ const myChart = new Chart(ctx, {
 
         var position = this._chart.canvas.getBoundingClientRect();
 
+        //Set tooltip width & height
+        if (tooltipModel.dataPoints[0].index>=0){
+          let dataPoint = tooltipModel.dataPoints;
+          let maxX = dataPoint[dataPoint.length-1].x;
+          if (maxX>250) var tooltipWidth = ((maxX-183.48465)/2)
+          else var tooltipWidth = ((maxX-10.6667)/2)
+      }
+
         //Tooltip css
         tooltipEl.style.opacity = 1;
         tooltipEl.style.position = 'absolute';
-        tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
+        tooltipEl.style.left = position.left + tooltipWidth + window.pageXOffset + 'px'//position.left + window.pageXOffset + tooltipModel.caretX + 'px';
         tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY + 'px';
         tooltipEl.style.fontFamily = tooltipModel._bodyFontFamily;
         tooltipEl.style.fontSize = '14px'
@@ -888,7 +995,6 @@ const myChart = new Chart(ctx, {
         tooltipEl.style.border = '2px solid grey';
         tooltipEl.style.borderRadius = '5px';
         tooltipEl.style.color = 'white';
-        tooltipEl.style.zIndex = "0";
       },
     }
   }
@@ -1032,13 +1138,19 @@ function chartInfoView() {
   $('.modal-body').removeClass('zeroPadding');
   refreshChartInfo();
   modal.style.display = 'block';
-  $(".studentName").css("color", "transparent");
-  $(".studentName").css("text-shadow", "0 0 10px #000");
+  $('.answerVisibility').css('color', 'transparent');
+  $('.answerVisibility').css('text-shadow', '0 0 10px #000');
+  $('.insertCodeClass').css('background-color', 'rgb(128,128,128)');
+  $('.insertCodeClass').addClass('grey');
+  if ($('.insertCodeClass').hasClass('tableResolvedRed')) $('.insertCodeClass').removeClass('tableResolvedRed');
+  if ($('.insertCodeClass').hasClass('tableResolvedOrange')) $('.insertCodeClass').removeClass('tableResolvedOrange');
   $('.chartButton').show();
 }
 
 function refreshChartInfo() {
   console.log('Refresh Chart Info');
+  $('#answerToggle').hide();
+  $('#statusToggle').hide();
   data.chartInfos = data.nameArray
     .map(user =>
       user.progress.find(({ QnLabel }) => chartInfoDataPoint == QnLabel)
@@ -1058,27 +1170,28 @@ function chartInfoFillData() {
   let message = '';
 
   if (questionType == 'TL') {
+    $('#statusToggle').show();
     if (chartInfo == 'name') {
       message = `
     <div class="row" style="font-weight: bold;text-align: center;">
         <div class="col-6 breakword">Name</div>
         <div class="col-6 breakword">Status</div>
     </div>`;
-      data.chartInfos.map((value, index) => {
-        message += `
-      <hr>
-      <div class="row" style="font-size: 0.8em;">`
-      if ($('.studentName').css("text-shadow")!="none"){
-        message+=`
-          <div class="col-6 breakword tableCenter studentName" style="color: transparent; text-shadow: 0 0 10px #000">${value.Name}</div>
-      `}
+    data.chartInfos.map((value, index) => {
+      message += `
+    <hr>
+      <div class="row" style="font-size: 0.8em;">
+      <div class="col-6 breakword tableCenter studentName">${value.Name}</div>
+      <div class="col-6 breakword" style="display: flex;">`
+      if ($('.insertCodeClass').hasClass('grey')){
+        message +=`
+        <div data-index ="${index}" id="insertCodeClass${index}" class="insertCodeClass grey" style="border-radius: 50%; height: 20px; width: 20px; margin: auto; background-color: rgb(128,128,128)"></div>
+        </div>
+        </div>`
+      }
       else{
-        message+=`
-          <div class="col-6 breakword tableCenter studentName">${value.Name}</div>
-      `};
-      message+=`
-        <div class="col-6 breakword" style="display: flex;">
-          <div data-index ="${index}" onclick="tableResolve(this)" class="${
+        message +=`
+        <div data-index ="${index}" onclick="tableResolve(this)" id="insertCodeClass${index}" class="insertCodeClass ${
           value.Code == 'codeGreen'
             ? 'tableGreen'
             : value.Code == 'codeRed'
@@ -1090,10 +1203,12 @@ function chartInfoFillData() {
             : 'tableUnresolvedOrange'
         }" style="border-radius: 50%; height: 20px; width: 20px; margin: auto;"></div>
         </div>
-      </div>
-      `;
-      });
+        </div>`
+      };
+    });
     } else {
+      $('#answerToggle').hide()
+      $('#statusToggle').hide()
       message = `
       <div class="row" style="font-weight: bold;text-align: center;">
           <div class="col-4 breakword">Number</div>
@@ -1125,20 +1240,12 @@ function chartInfoFillData() {
         <div class="col-12 breakword">Name</div>
     </div>`;
       data.chartInfos.map(({ Name }) => {
-      if ($('.studentName').css("text-shadow")!="none"){
         message += `
           <hr>
           <div class="row" style="font-size: 0.8em;">
-            <div class="col-12 breakword tableCenter studentName" style="color: transparent; text-shadow: 0 0 10px #000">${Name}</div>
+            <div class="col-12 breakword tableCenter">${Name}</div>
           </div>
-          `}
-      else{
-        message += `
-          <hr>
-          <div class="row" style="font-size: 0.8em;">
-            <div class="col-12 breakword tableCenter studentName">${Name}</div>
-          </div>
-          `};
+          `
       });
     } else {
       message = `
@@ -1152,44 +1259,57 @@ function chartInfoFillData() {
         `;
     }
   } else {
+    
     if (chartInfo == 'name') {
+      $('#answerToggle').show();
+      $('#statusToggle').show();
       message = `
         <div class="row" style="font-weight: bold;text-align: center;">
             <div class="col-4 breakword">Name</div>
             <div class="col-5 breakword">Answer</div>
             <div class="col-3 breakword">Status</div>
         </div>`;
-      data.chartInfos.map((value, index) => {
-        message += `
-        <hr>
-        <div class="row" style="font-size: 0.8em;">`
-        if ($('.studentName').css("text-shadow")!="none"){
-          message+=`
-            <div class="col-4 breakword tableCenter studentName" style="color: transparent; text-shadow: 0 0 10px #000">${value.Name}</div>
-          `}
-        else{
-          message+=`
-           <div class="col-4 breakword tableCenter studentName">${value.Name}</div>
-        `};
-        message+=
-        `<div class="col-5 breakword tableCenter">${value.Answer}</div>
-          <div class="col-3 breakword" style="display: flex;">
-            <div data-index ="${index}" onclick="tableResolve(this)" class="${
-          value.Code == 'codeGreen'
-            ? 'tableGreen'
-            : value.Code == 'codeRed'
-            ? value.resolved
-              ? 'tableResolvedRed'
-              : 'tableUnresolvedRed'
-            : value.resolved
-            ? 'tableResolvedOrange'
-            : 'tableUnresolvedOrange'
-        }" style="border-radius: 50%; height: 20px; width: 20px; margin: auto;"></div>
-          </div>
-        </div>
-        `;
-      });
+        data.chartInfos.map((value, index) => {
+          message += `
+          <hr>
+          <div class="row" style="font-size: 0.8em;">
+          <div class="col-4 breakword tableCenter studentName">${value.Name}</div>`
+          if ($('.answerVisibility').css('text-shadow')!="none"){
+            message += `
+            <div class="col-5 breakword tableCenter answerVisibility" style="color: transparent; text-shadow: 0 0 10px #000">${value.Answer}</div>`
+          }
+          else{
+            message += `
+            <div class="col-5 breakword tableCenter answerVisibility">${value.Answer}</div>`
+          }
+          message += `
+          <div class="col-3 breakword" style="display: flex;">`
+          if ($('.insertCodeClass').hasClass("grey")){
+            message +=`
+            <div data-index ="${index}" id="insertCodeClass${index}" class="insertCodeClass grey" style="border-radius: 50%; height: 20px; width: 20px; margin: auto; background-color: rgb(128,128,128)"></div>
+            </div>
+            </div>`
+          }
+          else{
+            message +=`
+            <div data-index ="${index}" onclick="tableResolve(this)" id="insertCodeClass${index}" class="insertCodeClass ${
+              value.Code == 'codeGreen'
+                ? 'tableGreen'
+                : value.Code == 'codeRed'
+                ? value.resolved
+                  ? 'tableResolvedRed'
+                  : 'tableUnresolvedRed'
+                : value.resolved
+                ? 'tableResolvedOrange'
+                : 'tableUnresolvedOrange'
+            }" style="border-radius: 50%; height: 20px; width: 20px; margin: auto;"></div>
+            </div>
+            </div>`
+          };
+        });
     } else {
+      $('#answerToggle').hide();
+      $('#statusToggle').hide();
       message = `
         <div class="row" style="font-weight: bold;text-align: center;">
             <div class="col-4 breakword">Number</div>
@@ -1225,9 +1345,11 @@ function chartInfoFillData() {
 //Pie Chart
 let togglePieChart = false;
 function pieChartToggle() {
+  $('#answerToggle').hide();
+  $('#statusToggle').hide();
   counter = 0;
-  colorsExcludingGreen = ["#7A92F2","#C18860","#CC2525", "#E67D32", "#E4D223","#F1ABE3","#6FA3CB","#EE9CA4","#47B8E5","#AB85CF"];
-  redColors= ["#D81717", "#BC1919","#940000"];
+  colorsExcludingGreen = ["#7A92F2","#C18860","#FE5757", "#E67D32", "#E4D223","#F1ABE3","#6FA3CB","#EE9CA4","#47B8E5","#AB85CF"];
+  redColors= ["#F9604C" ,"#ffbdbd", "#f57a7a"];
   if (!togglePieChart) {
     console.log('Toggle piechart');
     togglePieChart = true;
@@ -1325,7 +1447,7 @@ function pieChartToggle() {
           return a.number > b.number ? -1 : b.number > a.number ? 1 : 0;
         });
       backgroundColor = answers.map(({ code, number }) => {
-        if (code == 'codeGreen') return '#25B72A';
+        if (code == 'codeGreen') return '#4baea0';
         else{
           if (counter<10){
             let color = redColors[counter];
@@ -1403,6 +1525,7 @@ function tableResolve(event) {
       date: currentDay
         ? dt.dateToDateString(new Date())
         : $('#dateSelection').val(),
+      title: $('#lessonSelection option:selected').html(),
       data: d
     });
     data.refreshJasonView();
@@ -1430,11 +1553,13 @@ function dynamicFeedback() {
       modal.querySelector('.modal-header h2').innerHTML = `${this.getAttribute(
         'data-name'
       )} - ${this.getAttribute('data-qn-label')}`;
-
+      
       modal.querySelector('.modal-body').innerHTML = this.getAttribute(
         'data-answer'
       );
       $('.chartButton').hide();
+      $('#answerToggle').hide();
+      $('#statusToggle').hide();
       modal.style.display = 'block';
       clicks = 0;
     };
@@ -1459,6 +1584,7 @@ function resolveAlert(e) {
       date: currentDay
         ? dt.dateToDateString(new Date())
         : $('#dateSelection').val(),
+      title: $('#lessonSelection option:selected').html(),
       data: data.dayData[this.getAttribute('data-index-hist')]
     });
   }
@@ -1486,7 +1612,8 @@ function exportToCSV() {
       Answer: value.Answer ? value.Answer : '',
       Code: value.Code ? value.Code : '',
       HappendAt: value.HappendAt,
-      resolved: value.resolved ? value.resolved : ''
+      resolved: value.resolved ? value.resolved : '',
+      Title: value.Title
     };
   });
   const headers = {
@@ -1495,7 +1622,8 @@ function exportToCSV() {
     Answer: 'Answer',
     Code: 'Code',
     HappendAt: 'HappendAt',
-    resolved: 'Resolved At'
+    resolved: 'Resolved At',
+    Title: 'Title'
   };
 
   if (headers) {
@@ -1562,14 +1690,58 @@ function isEquivalent(a, b) {
   return true;
 }
 
-//Show & blur name
-function showNameToggle(){
-  if($('.studentName').css("text-shadow")!="none"){
-    $(".studentName").css("color", "");
-    $(".studentName").css("textShadow", "none");
+//toggle visibility
+function answerToggle(){
+  if($('.answerVisibility').css("text-shadow")!="none"){
+    $(".answerVisibility").css("color", "");
+    $(".answerVisibility").css("textShadow", "none");
   }
   else{
-    $(".studentName").css("color", "transparent");
-    $(".studentName").css("textShadow", "0 0 10px #000")
+    $(".answerVisibility").css("color", "transparent");
+    $(".answerVisibility").css("textShadow", "0 0 10px #000");
   }
-};
+}
+
+function statusToggle(){
+  data.chartInfos.map((value, index) => {
+    
+    let idName = '#insertCodeClass'+ index
+    if ($(idName).hasClass('grey')){
+      $(idName).css('background', '');
+      $(idName).addClass(
+      value.Code == 'codeGreen'
+      ? 'tableGreen'
+      : value.Code == 'codeRed'
+      ? value.resolved
+      ? 'tableResolvedRed'
+      : 'tableUnresolvedRed'
+      : value.resolved
+      ? 'tableResolvedOrange'
+      : 'tableUnresolvedOrange'
+      );
+      $(idName).removeClass('grey');
+      $(idName).attr('onClick', 'tableResolve(this)');
+    }
+    else {
+      $(idName).removeClass();
+      $(idName).addClass('insertCodeClass');
+      $(idName).addClass('grey');
+      $(idName).css('background-color', 'rgb(128, 128, 128)');
+      $(idName).prop('onclick', null).off("click");
+    }
+  })
+}
+
+//lesson filter button
+function lessonFilter(){
+  if ($("#lessonFilter").text()=="ON"){
+    $('#lessonFilter').html('OFF');
+    $('#lessonFilter').removeClass("btn-primary").addClass("btn-danger");
+    $('#lessonSelection').attr('disabled', true);
+  }
+  else{
+    $('#lessonFilter').html('ON');
+    $('#lessonFilter').removeClass("btn-danger").addClass("btn-primary");
+    $('#lessonSelection').attr('disabled', false);
+  }
+}

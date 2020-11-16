@@ -61,8 +61,6 @@
                         placeholder=" name">
                     <input type="text" size="10" id="surveyJSDBid" style="background-color: #ffcccc"
                         placeholder=" dbID">
-                    <input type="text" size="10" id="surveyJSDBaccessKey" style="background-color: #ccffcc"
-                        placeholder=" accessKey">
                     <button class="btn btn-primary btn-sm" id="startButton">Start</button>
                     <button class="btn btn-primary btn-sm" id="clearButton">Clear</button>
                     <button class="btn btn-warning btn-sm" id="uploadButton"
@@ -79,25 +77,36 @@
                     <button id="toggleStopStartButton" class="btn btn-warning btn-sm">Stop</button>
                 </p>
                 <div class="row">
-                    <div class="col-7">
+                    <div class="col-lg-4 col-md-4 col-sm-4" style="float: left;">
                         <div>
                             Select Date:
                         </div>
-                        <select class="custom-select" id="dateSelection" onchange="changeDate(this)"></select>
+                        <div style="display: flex;">
+                            <select class="custom-select" id="dateSelection" onchange="changeDate(this)"></select>
+                        </div>        
                     </div>
-                    <div id="current" class="col-5">
+                    <div class="col-lg-5 col-md-5 col-sm-5">
+                        <div>
+                            Select Lesson:
+                        </div>
+                        <div style="display:flex;">
+                            <select class="custom-select" id="lessonSelection" onchange="data.setLesson(this)"></select>
+                            <button class = "btn btn-danger btn-sm" id="lessonFilter" style="height: 38px; margin-left: 10px" onclick="lessonFilter()">OFF</button>       
+                        </div>                        
+                    </div> 
+                    <div id="current" class="col-3">
                         <div>
                             Use Current Time:
                         </div>
                         <div style="display: inline-block;">
-                            <button id="currentB" class="btn btn-primary btn-sm" onclick="toggleCurrent()">True</button>
+                            <button id="currentB" class="btn btn-primary btn-sm" style="height: 38px;" onclick="toggleCurrent()">True</button>
                             <span id="holding"
                                 style="display: inline-block; vertical-align: middle; line-height: normal;">(Lock)</span>
                         </div>
                     </div>
                 </div>
                 <div class="row" id="buttons">
-                    <div class="col-7">
+                    <div class="col-10">
                         <div style="float: left;">
                             <!--
                             <button class="btn btn-success btn-sm" onclick="sortName()" id="sortName">Sort by Name
@@ -117,7 +126,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-5">
+                    <div class="col-2">
                         <div>
                             <button class="btn btn-success btn-sm" onclick="exportToCSV()">CSV</button>
                             <button class="btn btn-success btn-sm" onclick="exportToJsonFile()"> JSON</button>
@@ -157,8 +166,10 @@
             <div style="justify-content: space-evenly; display: flex;margin: 5px 0;">
                 <button class="btn btn-success btn-sm chartButton" id="chartToggle" style="display:none;"
                     onclick="chartInfoToggle()">Toggle List By Name</button>
-                <button class="btn btn-success btn-sm chartButton" id="nameToggle" style="display:none;"
-                    onclick="showNameToggle()">Toggle Name Visibility</button>
+                <button class="btn btn-success btn-sm" id="answerToggle" style="display:none;"
+                    onclick="answerToggle()">Toggle Answers</button>
+                <button class="btn btn-success btn-sm" id="statusToggle" style="display:none;"
+                    onclick="statusToggle()">Toggle Status</button>
                 <button class="btn btn-success btn-sm chartButton" id="pieChartToggle" style="display:none;"
                     onclick="pieChartToggle()">Toggle PieChart</button>
             </div>
@@ -170,10 +181,18 @@
 
     <!-- Slider -->
     <div class="runningPage sliderDiv">
-        <p style="justify-content: space-between;">
-            <span id="startTime"></span>
+        <p style="justify-content: space-between; height:35px; margin-bottom: 7px;">
+            <span style="display: flex; text-align:center;">
+                <input type="time" id="inputMin" class="form-control startTime" onchange="inputTimeChange(this.id)" style="width: 130px;">
+                <button class="input-group-append btn btn-primary" id="btnStart" style="height: 38px" value="startNow" onclick="setTimeNow(this.value)">Set Now</button>
+            </span>
+            <!--<span id="startTime"></span>-->
             <span id="now"></span>
-            <span id="sliderOutput"></span>
+            <!--<span id="sliderOutput"></span>-->
+            <span style="display: flex;">
+                <input type="time" id="inputMax" class="form-control sliderOutput" onchange="inputTimeChange(this.id)" style="width: 130px;">
+                <button class="input-group-append btn btn-primary" id="btnEnd" style="height: 38px;" value="endNow" onclick="setTimeNow(this.value)">Set Now</button>
+            </span>
         </p>
         <input type="range" class="slider" id="myRange">
     </div>
