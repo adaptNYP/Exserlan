@@ -32,7 +32,7 @@ switch (window.location.protocol) {
     // };
     // xmlHttp.open("GET", "JS/surveyJSDBinfo.txt", true)
     // xmlHttp.send()
-    break;
+    //break;
   case 'file:':
     console.log('over file');
     break;
@@ -377,6 +377,9 @@ const data = new (class {
     let uniqueLessons =[...new Set(d.map(l => `<option>${l.Title}</option>`))];
     let collator = new Intl.Collator(undefined, {sensitivity: 'base'});
     uniqueLessons.forEach(element=>{
+      if (element.includes('undefined')){
+        element = element.replace("undefined", "No Lesson Assigned");
+      }
       if(this.allLessons.includes(element)==false) this.allLessons.push(element)
     })
     $('#lessonSelection').html(this.allLessons.sort(collator.compare));
@@ -413,8 +416,9 @@ const data = new (class {
   //Activate when change date
   setDate(date, lesson) {
     this.dayData = this.arrayToDate(this.sortedData, date);
+    console.log(this.dayData)
     this.dayData = this.arrayByLesson(this.dayData, lesson);
-
+   
     //If selected date doesn't have data, only applicable for today's date
     if (this.dayData.length == 0) {
       console.log('This date no data');
@@ -466,6 +470,7 @@ const data = new (class {
         ? dt.dateToDateString(new Date())
         : $('#dateSelection').val();
     let resolvedThisDateData = resolvedData.filter(s => s.date == cDate && s.title==lesson);
+    console.log(resolvedThisDateData)
     if (resolvedThisDateData) {
       for (let i = 0; i < resolvedThisDateData.length; i++) {
         const { Answer, Code, HappendAt, Name, QnLabel, Title } = resolvedThisDateData[
@@ -495,8 +500,9 @@ const data = new (class {
     let date = $('#dateSelection option:selected').val();
     if (date.includes("(Today)")) date = new Date(date.replace("(Today)", "").trim());
     else date = new Date(date)
-    let currLes = (evt.options[evt.selectedIndex].text)
+    let currLes = (evt.options[evt.selectedIndex].text);
     this.setDate(date, currLes)
+    slider.value = slider.max
     this.runChartView();
     this.refreshJasonView();
   }
@@ -687,7 +693,8 @@ const data = new (class {
     return newarray
   }
   arrayByLesson(a, name){
-    return a.filter(x=> x.Title == name)
+    if (name!='No Lesson Assigned') return a.filter(x=> x.Title == name);
+    else return a.filter(x=> x.Title == undefined)
   }
   arraySortString(array, name, ascdesc = 'desc') {
     return array.sort((a, b) => {
