@@ -361,7 +361,15 @@ const data = new (class {
   }
   mainSort() {
     changeDateVariable = true;
-    let d = (this.sortedData = this.ajaxData.concat());
+    
+    //let d = (this.sortedData = this.ajaxData.concat());
+	
+	  this.sortedData = this.ajaxData.concat();
+	  this.sortedData.forEach(element => {
+		  element.Title = element.Title.trim();
+	  })
+	  let d = this.sortedData;
+    
     d.map(
       value =>
         (value.HappendAt = new Date(
