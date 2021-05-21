@@ -364,14 +364,16 @@ const data = new (class {
     
     //let d = (this.sortedData = this.ajaxData.concat());
     this.sortedData = this.ajaxData.concat();
-    try {
-      this.sortedData.forEach(element => {
-        if(element.Title) {
-	  element.Title = element.Title.trim();
-	}
-      })
-    } catch(e) {};
+	try {
+		this.sortedData.forEach(element => {
+			if(element.Title) {
+				element.Title = element.Title.trim();
+			}
+		})
+	} catch(e) {};
     
+    let d = this.sortedData;
+
     d.map(
       value =>
         (value.HappendAt = new Date(
