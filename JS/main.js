@@ -363,12 +363,14 @@ const data = new (class {
     changeDateVariable = true;
     
     //let d = (this.sortedData = this.ajaxData.concat());
-	
-	  this.sortedData = this.ajaxData.concat();
-	  this.sortedData.forEach(element => {
-		  element.Title = element.Title.trim();
-	  })
-	  let d = this.sortedData;
+    this.sortedData = this.ajaxData.concat();
+    try {
+      this.sortedData.forEach(element => {
+        if(element.Title) {
+	  element.Title = element.Title.trim();
+	}
+      })
+    } catch(e) {};
     
     d.map(
       value =>
